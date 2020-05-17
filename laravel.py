@@ -6,6 +6,7 @@ import re
 import logging
 from argparse import ArgumentParser
 from collections import namedtuple
+from pathlib import Path
 from types import SimpleNamespace
 
 
@@ -27,6 +28,10 @@ class Validation:
         )
 
         return domain_regex.match(domain) is not None
+
+    @staticmethod
+    def directory_exists(name: str) -> bool:
+        return Path(f'{Path.cwd()}/{name}').is_dir()
 
 
 if __name__ == '__main__':
@@ -76,6 +81,9 @@ if __name__ == '__main__':
         # validation
         if not Validation.is_pascal_case(arguments.project_name):
             raise RuntimeError(f'The project name: {arguments.project_name} is not pascal-cased.')
+
+        if Validation.directory_exists(arguments.project_name):
+            raise RuntimeError(f'Another directory with the name {arguments.project_name} exists in the current directory.')
 
         if not Validation.domain_is_valid(arguments.domain):
             raise RuntimeError(f'The domain: {arguments.domain} is invalid.')
