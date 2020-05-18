@@ -340,9 +340,11 @@ if __name__ == '__main__':
             with cd('configuration'):
                 with cd('nginx'):
                     with cd('ssl'):
-                        (Ssl(hostname=configuration['project']['domain'])
-                            .generate()
-                            .write(
-                                key_name=configuration['services']['nginx']['ssl']['key'],
-                                certificate_name=configuration['services']['nginx']['ssl']['certificate']
-                        ))
+                        Ssl(
+                            hostname=configuration['project']['domain']
+                        ).generate(
+                            # generate the ssl certificates...
+                        ).write(
+                            key_name=configuration['services']['nginx']['ssl']['key'],
+                            certificate_name=configuration['services']['nginx']['ssl']['certificate']
+                        )
