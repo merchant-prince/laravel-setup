@@ -9,12 +9,19 @@ from argparse import ArgumentParser
 from collections import namedtuple
 from collections.abc import Mapping
 from contextlib import contextmanager
+from datetime import datetime, timedelta
 from pathlib import Path
 from types import SimpleNamespace
 
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
+
 
 @contextmanager
-def cd(destination):
+def cd(destination: str) -> None:
     """
     A context manager to change directory. Mimics unix's cd.
 
@@ -127,6 +134,97 @@ class Skeleton:
                 raise ValueError('The directory structure provided is ill-formed.')
 
 
+class Ssl:
+    """
+    This class is responsible for creating a x509 TLS/SSL certificate, and its associated key.
+
+    Attributes:
+        _hostname (str):
+            The hostname/domain of the machine on which the application will be hosted.
+
+        _key_size (int):
+            The size of the SSL key.
+
+        _validity (int):
+            The number number of days for which the certificate will remain valid.
+
+        _key (bytes):
+            The TLS key content.
+
+        _certificate (bytes):
+            The TLS certificate content.
+    """
+
+    def __init__(self, hostname: str, key_size: int = 4096, validity: int = 365):
+        self._hostname: str = hostname
+        self._key_size: int = key_size
+        self._validity: int = validity
+        self._key: bytes = None
+        self._certificate: bytes = None
+
+    def generate(self):
+        """
+        Generate the TLS/SSL key and certificate.
+
+        Return:
+            self
+        """
+
+        key = rsa.generate_private_key(
+            public_exponent=65537,
+            key_size=self._key_size,
+            backend=default_backend(),
+        )
+
+        name = x509.Name([
+            x509.NameAttribute(x509.NameOID.COMMON_NAME, self._hostname)
+        ])
+
+        san = x509.SubjectAlternativeName([
+            x509.DNSName(self._hostname)
+        ])
+
+        basic_constraints = x509.BasicConstraints(ca=True, path_length=0)
+        now = datetime.utcnow()
+
+        cert = (
+            x509.CertificateBuilder()
+                .subject_name(name)
+                .issuer_name(name)
+                .public_key(key.public_key())
+                .serial_number(1000)
+                .not_valid_before(now)
+                .not_valid_after(now + timedelta(days=self._validity))
+                .add_extension(basic_constraints, False)
+                .add_extension(san, False)
+                .sign(key, hashes.SHA256(), default_backend())
+        )
+
+        self._certificate = cert.public_bytes(encoding=serialization.Encoding.PEM)
+        self._key = key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.TraditionalOpenSSL,
+            encryption_algorithm=serialization.NoEncryption()
+        )
+
+        return self
+
+    def write(self, key_name: str, certificate_name: str) -> None:
+        """
+        Write the generated certificates to a binary file.
+
+        Args:
+            key_name (str): The filename of the key.
+            certificate_name (str): The filename of the certificate.
+        """
+
+        with open(key_name, 'wb') as key:
+            key.write(self._key)
+
+        with open(certificate_name, 'wb') as certificate:
+            certificate.write(self._certificate)
+
+
 if __name__ == '__main__':
     logging.basicConfig(
         format='[%(levelname)s]: %(msg)s',
@@ -171,7 +269,10 @@ if __name__ == '__main__':
     arguments = parser.main.parse_args()
 
     if arguments.action == 'setup':
+
         # validation
+        logging.info('Validating provided values...')
+
         if not Validation.is_pascal_case(arguments.project_name):
             raise RuntimeError(f'The project name: {arguments.project_name} is not pascal-cased.')
 
@@ -182,15 +283,27 @@ if __name__ == '__main__':
             raise RuntimeError(f'The domain: {arguments.domain} is invalid.')
 
         # configuration
+        logging.info('Creating configuration values...')
+
         configuration = {
             # project-level configuration values.
             'project': {
                 'name': arguments.project_name,
                 'domain': arguments.domain
+            },
+            'services': {
+                'nginx': {
+                    'ssl': {
+                        'key': 'key.pem',
+                        'certificate': 'certificate.pem'
+                    }
+                }
             }
         }
 
         # directory structure
+        logging.info('Creating directory structure...')
+
         Skeleton.create({
             configuration['project']['name']: {
                 'configuration': {
@@ -219,3 +332,17 @@ if __name__ == '__main__':
                 'application': {}
             }
         })
+
+        # Generate ssl certificates
+        logging.info('Generating SSL certificates...')
+
+        with cd(configuration['project']['name']):
+            with cd('configuration'):
+                with cd('nginx'):
+                    with cd('ssl'):
+                        (Ssl(hostname=configuration['project']['domain'])
+                            .generate()
+                            .write(
+                                key_name=configuration['services']['nginx']['ssl']['key'],
+                                certificate_name=configuration['services']['nginx']['ssl']['certificate']
+                        ))
