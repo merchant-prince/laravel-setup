@@ -11,6 +11,7 @@ from collections.abc import Mapping
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 from pathlib import Path
+from string import Template
 from types import SimpleNamespace
 
 from cryptography import x509
@@ -225,6 +226,11 @@ class Ssl:
             certificate.write(self._certificate)
 
 
+def template_path(path: str = '') -> Path:
+    """Get a template's path."""
+    return Path(f'{Path(__file__).parent}/templates/{path}')
+
+
 if __name__ == '__main__':
     logging.basicConfig(
         format='[%(levelname)s]: %(msg)s',
@@ -293,9 +299,21 @@ if __name__ == '__main__':
             },
             'services': {
                 'nginx': {
+                    'name': 'nginx',
                     'ssl': {
                         'key': 'key.pem',
                         'certificate': 'certificate.pem'
+                    }
+                },
+                'php': {
+                    'name': 'php',
+                    'port': 9000
+                },
+                'adminer': {
+                    'name': 'adminer',
+                    'port': 8080,
+                    'ui': {
+                        'port': 8080
                     }
                 }
             }
@@ -312,11 +330,11 @@ if __name__ == '__main__':
                         'ssl': {}
                     },
                     'php': {},
-                    'postgresql': {},
-                    'redis': {},
-                    'adminer': {},
-                    'selenium': {},
-                    'firefox': {}
+                    # 'postgresql': {},
+                    # 'redis': {},
+                    # 'adminer': {},
+                    # 'selenium': {},
+                    # 'firefox': {}
                 },
                 'docker-compose': {
                     'services': {
@@ -348,3 +366,46 @@ if __name__ == '__main__':
                             key_name=configuration['services']['nginx']['ssl']['key'],
                             certificate_name=configuration['services']['nginx']['ssl']['certificate']
                         )
+
+        # Create configuration files
+        logging.info("Generating the project's configuration files...")
+
+        with cd(configuration['project']['name']):
+            with cd('configuration'):
+                with cd('nginx'):
+                    with cd('conf.d'):
+                        with open('default.conf', 'w') as default_conf:
+                            with open(
+                                    f"{template_path('configuration/nginx/conf.d/default.conf')}"
+                            ) as default_conf_template:
+                                default_conf.write(
+                                    Template(default_conf_template.read()).substitute(
+                                        project_domain=configuration['project']['domain'],
+                                        ssl_key=configuration['services']['nginx']['ssl']['key'],
+                                        ssl_certificate=configuration['services']['nginx']['ssl']['certificate'],
+                                        php_service_name=configuration['services']['php']['name'],
+                                        php_service_port=configuration['services']['php']['port']
+                                    )
+                                )
+
+                        with open('utils.conf', 'w') as utils_conf:
+                            with open(
+                                    f"{template_path('configuration/nginx/conf.d/utils.conf')}"
+                            ) as utils_conf_template:
+                                utils_conf.write(
+                                    Template(utils_conf_template.read()).substitute(
+                                        project_domain=configuration['project']['domain'],
+                                        adminer_application_port=configuration['services']['adminer']['ui']['port'],
+                                        adminer_service_name=configuration['services']['adminer']['name'],
+                                        adminer_service_port=configuration['services']['adminer']['port']
+                                    )
+                                )
+
+                with cd('php'):
+                    with open('custom.ini', 'w') as custom_ini:
+                        with open(f"{template_path('configuration/php/custom.ini')}") as custom_ini_template:
+                            custom_ini.write(
+                                Template(custom_ini_template.read()).substitute(
+                                    # template variables...
+                                )
+                            )
