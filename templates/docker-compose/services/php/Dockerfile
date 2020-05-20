@@ -1,6 +1,4 @@
-ARG PHP_FPM_IMAGE_TAG
-
-FROM php:$${PHP_FPM_IMAGE_TAG}
+FROM php:latest
 
 RUN apt-get update \
  && apt-get install -y cron zip libpq-dev libzip-dev \

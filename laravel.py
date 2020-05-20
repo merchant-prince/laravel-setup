@@ -299,21 +299,19 @@ if __name__ == '__main__':
             },
             'services': {
                 'nginx': {
-                    'name': 'nginx',
                     'ssl': {
                         'key': 'key.pem',
                         'certificate': 'certificate.pem'
                     }
                 },
-                'php': {
-                    'name': 'php',
-                    'port': 9000
-                },
                 'adminer': {
-                    'name': 'adminer',
-                    'port': 8080,
-                    'ui': {
-                        'port': 8080
+                    'port': 8080  # for the administration panel (ui)
+                },
+                'postgres': {
+                    'environment': {
+                        'db': arguments.project_name.lower(),
+                        'user': 'username',
+                        'password': 'password'
                     }
                 }
             }
@@ -328,26 +326,14 @@ if __name__ == '__main__':
                     'nginx': {
                         'conf.d': {},
                         'ssl': {}
-                    },
-                    # 'php': {},
-                    # 'postgresql': {},
-                    # 'redis': {},
-                    # 'adminer': {},
-                    # 'selenium': {},
-                    # 'firefox': {}
+                    }
                 },
                 'docker-compose': {
                     'services': {
-                        # 'nginx': {},
                         'php': {
                             # Dockerfile
                             # entrypoint.sh*
-                        },
-                        # 'postgresql': {},
-                        # 'redis': {},
-                        # 'adminer': {},
-                        # 'selenium': {},
-                        # 'firefox': {}
+                        }
                     }
                 },
                 'application': {}
@@ -374,35 +360,48 @@ if __name__ == '__main__':
         logging.info("Generating the project's configuration files...")
 
         with cd(configuration['project']['name']):
+            # docker-compose.yml
+            with open('docker-compose.yml', 'w') as file, \
+                    open(f"{template_path('docker-compose/docker-compose.yml')}") as template:
+                file.write(
+                    Template(template.read()).substitute(
+                        project_name=configuration['project']['name'],
+                        user_id=os.geteuid(),
+                        group_id=os.getegid(),
+                        postgres_db=configuration['services']['postgres']['environment']['db'],
+                        postgres_user=configuration['services']['postgres']['environment']['user'],
+                        postgres_password=configuration['services']['postgres']['environment']['password'],
+                    )
+                )
+
             with cd('configuration'):
                 with cd('nginx'):
                     with cd('conf.d'):
+                        # default.conf
                         with open('default.conf', 'w') as file, \
                                 open(f"{template_path('configuration/nginx/conf.d/default.conf')}") as template:
                             file.write(
                                 Template(template.read()).substitute(
                                     project_domain=configuration['project']['domain'],
                                     ssl_key=configuration['services']['nginx']['ssl']['key'],
-                                    ssl_certificate=configuration['services']['nginx']['ssl']['certificate'],
-                                    php_service_name=configuration['services']['php']['name'],
-                                    php_service_port=configuration['services']['php']['port']
+                                    ssl_certificate=configuration['services']['nginx']['ssl']['certificate']
                                 )
                             )
 
+                        # utils.conf
                         with open('utils.conf', 'w') as file, \
                                 open(f"{template_path('configuration/nginx/conf.d/utils.conf')}") as template:
                             file.write(
                                 Template(template.read()).substitute(
                                     project_domain=configuration['project']['domain'],
-                                    adminer_application_port=configuration['services']['adminer']['ui']['port'],
-                                    adminer_service_name=configuration['services']['adminer']['name'],
-                                    adminer_service_port=configuration['services']['adminer']['port']
+                                    adminer_port=configuration['services']['adminer']['port']
                                 )
                             )
 
             with cd('docker-compose'):
                 with cd('services'):
                     with cd('php'):
+                        # Dockerfile (php)
                         with open('Dockerfile', 'w') as file, \
                                 open(f"{template_path('docker-compose/services/php/Dockerfile')}") as template:
                             file.write(
@@ -411,6 +410,7 @@ if __name__ == '__main__':
                                 )
                             )
 
+                        # entrypoint.sh (php)
                         with open('entrypoint.sh', 'w') as file, \
                                 open(f"{template_path('docker-compose/services/php/entrypoint.sh')}") as template:
                             file.write(

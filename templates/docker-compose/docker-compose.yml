@@ -1,0 +1,78 @@
+version: "3.7"
+
+
+services:
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./configuration/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./configuration/nginx/ssl:/etc/nginx/ssl:ro
+      - ./application/${project_name}:/var/www/html:ro
+    ports:
+      - "80:80"
+      - "443:443"
+    restart: always
+    depends_on:
+      - php
+      - postgresql
+    networks:
+      - adminer
+      - nginx
+
+  php:
+    build:
+      context: ./dockerfiles/php
+      args:
+        USER_ID: ${user_id}
+        GROUP_ID: ${group_id}
+    volumes:
+      - ./dockerfiles/php/entrypoint.sh:/home/www-data/entrypoint.sh:ro
+      - ./application/${project_name}:/var/www/html
+    restart: always
+    networks:
+      - nginx
+      - postgresql
+      - redis
+
+  postgresql:
+    image: postgres:latest
+    volumes:
+      - postgresql:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: "${postgres_db}"
+      POSTGRES_USER: "${postgres_user}"
+      POSTGRES_PASSWORD: "${postgres_password}"
+    restart: always
+    networks:
+      - adminer
+      - postgresql
+
+  redis:
+    image: redis:latest
+    volumes:
+      - redis:/data
+    restart: always
+    networks:
+      - redis
+
+  adminer:
+    image: adminer:latest
+    depends_on:
+      - nginx
+      - postgresql
+    restart: always
+    networks:
+      - adminer
+
+
+networks:
+  adminer:
+  nginx:
+  postgresql:
+  redis:
+
+
+volumes:
+  adminer:
+  postgresql:
+  redis:
