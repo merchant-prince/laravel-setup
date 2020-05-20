@@ -329,7 +329,7 @@ if __name__ == '__main__':
                         'conf.d': {},
                         'ssl': {}
                     },
-                    'php': {},
+                    # 'php': {},
                     # 'postgresql': {},
                     # 'redis': {},
                     # 'adminer': {},
@@ -338,13 +338,16 @@ if __name__ == '__main__':
                 },
                 'docker-compose': {
                     'services': {
-                        'nginx': {},
-                        'php': {},
-                        'postgresql': {},
-                        'redis': {},
-                        'adminer': {},
-                        'selenium': {},
-                        'firefox': {}
+                        # 'nginx': {},
+                        'php': {
+                            # Dockerfile
+                            # entrypoint.sh*
+                        },
+                        # 'postgresql': {},
+                        # 'redis': {},
+                        # 'adminer': {},
+                        # 'selenium': {},
+                        # 'firefox': {}
                     }
                 },
                 'application': {}
@@ -374,38 +377,46 @@ if __name__ == '__main__':
             with cd('configuration'):
                 with cd('nginx'):
                     with cd('conf.d'):
-                        with open('default.conf', 'w') as default_conf:
-                            with open(
-                                    f"{template_path('configuration/nginx/conf.d/default.conf')}"
-                            ) as default_conf_template:
-                                default_conf.write(
-                                    Template(default_conf_template.read()).substitute(
-                                        project_domain=configuration['project']['domain'],
-                                        ssl_key=configuration['services']['nginx']['ssl']['key'],
-                                        ssl_certificate=configuration['services']['nginx']['ssl']['certificate'],
-                                        php_service_name=configuration['services']['php']['name'],
-                                        php_service_port=configuration['services']['php']['port']
-                                    )
-                                )
-
-                        with open('utils.conf', 'w') as utils_conf:
-                            with open(
-                                    f"{template_path('configuration/nginx/conf.d/utils.conf')}"
-                            ) as utils_conf_template:
-                                utils_conf.write(
-                                    Template(utils_conf_template.read()).substitute(
-                                        project_domain=configuration['project']['domain'],
-                                        adminer_application_port=configuration['services']['adminer']['ui']['port'],
-                                        adminer_service_name=configuration['services']['adminer']['name'],
-                                        adminer_service_port=configuration['services']['adminer']['port']
-                                    )
-                                )
-
-                with cd('php'):
-                    with open('custom.ini', 'w') as custom_ini:
-                        with open(f"{template_path('configuration/php/custom.ini')}") as custom_ini_template:
-                            custom_ini.write(
-                                Template(custom_ini_template.read()).substitute(
-                                    # template variables...
+                        with open('default.conf', 'w') as file, \
+                                open(f"{template_path('configuration/nginx/conf.d/default.conf')}") as template:
+                            file.write(
+                                Template(template.read()).substitute(
+                                    project_domain=configuration['project']['domain'],
+                                    ssl_key=configuration['services']['nginx']['ssl']['key'],
+                                    ssl_certificate=configuration['services']['nginx']['ssl']['certificate'],
+                                    php_service_name=configuration['services']['php']['name'],
+                                    php_service_port=configuration['services']['php']['port']
                                 )
                             )
+
+                        with open('utils.conf', 'w') as file, \
+                                open(f"{template_path('configuration/nginx/conf.d/utils.conf')}") as template:
+                            file.write(
+                                Template(template.read()).substitute(
+                                    project_domain=configuration['project']['domain'],
+                                    adminer_application_port=configuration['services']['adminer']['ui']['port'],
+                                    adminer_service_name=configuration['services']['adminer']['name'],
+                                    adminer_service_port=configuration['services']['adminer']['port']
+                                )
+                            )
+
+            with cd('docker-compose'):
+                with cd('services'):
+                    with cd('php'):
+                        with open('Dockerfile', 'w') as file, \
+                                open(f"{template_path('docker-compose/services/php/Dockerfile')}") as template:
+                            file.write(
+                                Template(template.read()).substitute(
+                                    # template has no variables
+                                )
+                            )
+
+                        with open('entrypoint.sh', 'w') as file, \
+                                open(f"{template_path('docker-compose/services/php/entrypoint.sh')}") as template:
+                            file.write(
+                                Template(template.read()).substitute(
+                                    # template has no variables
+                                )
+                            )
+
+                        Path('entrypoint.sh').chmod(0o755)
