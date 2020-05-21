@@ -107,11 +107,10 @@ class Skeleton:
         """
 
         for name, structure in structure.items():
-            if isinstance(structure, Mapping):
-                os.mkdir(name)
+            os.mkdir(name)
 
-                with cd(name):
-                    Skeleton._create(structure)
+            with cd(name):
+                Skeleton._create(structure)
 
     @staticmethod
     def _validate(structure: Mapping) -> None:
@@ -124,9 +123,6 @@ class Skeleton:
         Raises:
             ValueError: If the given structure is invalid.
         """
-
-        if not isinstance(structure, Mapping):
-            raise ValueError('The directory structure provided is ill-formed.')
 
         for name, structure in structure.items():
             if isinstance(structure, Mapping):
@@ -227,7 +223,8 @@ class Ssl:
 
 
 def template_path(path: str = '') -> Path:
-    """Get a template's path."""
+    """Get a template's absolute path from the relative path specified."""
+
     return Path(f'{Path(__file__).parent}/templates/{path}')
 
 
@@ -362,7 +359,7 @@ if __name__ == '__main__':
         with cd(configuration['project']['name']):
             # docker-compose.yml
             with open('docker-compose.yml', 'w') as file, \
-                    open(f"{template_path('docker-compose/docker-compose.yml')}") as template:
+                    open(f"{template_path('docker-compose.yml')}") as template:
                 file.write(
                     Template(template.read()).substitute(
                         project_name=configuration['project']['name'],
@@ -373,6 +370,17 @@ if __name__ == '__main__':
                         postgres_password=configuration['services']['postgres']['environment']['password'],
                     )
                 )
+
+            # run
+            with open('run', 'w') as file, \
+                    open(f"{template_path('run')}") as template:
+                file.write(
+                    Template(template.read()).substitute(
+                        project_name=configuration['project']['name']
+                    )
+                )
+
+            Path('run').chmod(0o755)
 
             with cd('configuration'):
                 with cd('nginx'):

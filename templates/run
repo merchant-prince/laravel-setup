@@ -1,0 +1,124 @@
+#! /usr/bin/env python3
+
+import os
+from argparse import ArgumentParser
+from collections import namedtuple
+from pathlib import Path
+from subprocess import run
+from types import SimpleNamespace
+
+if __name__ == "__main__":
+    # argument parsing
+    parser = namedtuple('Parser', ('main', 'subparser', 'subparsers'))(
+        main := ArgumentParser(
+            prog='run',
+            description='A script to run the current Laravel project stack.',
+            epilog='Deja Vu!',
+            allow_abbrev=False
+        ),
+        main.add_subparsers(
+            title='Action',
+            description='The action to take.',
+            dest='action',
+            required=True
+        ),
+        SimpleNamespace()
+    )
+
+    # artisan
+    parser.subparsers.artisan = parser.subparser.add_parser(
+        'artisan',
+        description='Run the artisan CLI on the current project.',
+        epilog='Art!',
+        add_help=True,
+        allow_abbrev=False
+    )
+    parser.subparsers.artisan.add_argument(
+        'command',
+        nargs='*',
+        help='The artisan command to be run.'
+    )
+
+    # composer
+    parser.subparsers.composer = parser.subparser.add_parser(
+        'composer',
+        description='Run a composer command on the current project.',
+        epilog='Compose!',
+        add_help=True,
+        allow_abbrev=False
+    )
+    parser.subparsers.composer.add_argument(
+        'command',
+        nargs='*',
+        help='The composer command to be run.'
+    )
+
+    # yarn
+    parser.subparsers.yarn = parser.subparser.add_parser(
+        'yarn',
+        description='Run a yarn command on the current project.',
+        epilog='Weave!',
+        add_help=True,
+        allow_abbrev=False
+    )
+    parser.subparsers.yarn.add_argument(
+        'command',
+        nargs='*',
+        help='The yarn command to be run.'
+    )
+
+    # start
+    parser.subparsers.start = parser.subparser.add_parser(
+        'start',
+        description='Start the current Laravel project stack on docker.',
+        epilog='Start!',
+        add_help=True,
+        allow_abbrev=False
+    )
+    parser.subparsers.start.add_argument(
+        'command',
+        nargs='*',
+        help="'docker-compose up' arguments."
+    )
+
+    # stop
+    parser.subparsers.stop = parser.subparser.add_parser(
+        'stop',
+        description='Stop the current Laravel project stack on docker.',
+        epilog='Stop!',
+        add_help=True,
+        allow_abbrev=False
+    )
+    parser.subparsers.stop.add_argument(
+        'command',
+        nargs='*',
+        help="'docker-compose down' arguments."
+    )
+
+    # parse arguments
+    arguments = parser.main.parse_args()
+
+    if arguments.action == 'artisan':
+        run(('docker-compose', 'exec', '--user', 'www-data', 'php', 'php', 'artisan', *arguments.command))
+
+    elif arguments.action == 'composer':
+        run(('docker-compose', 'exec', '--user', 'www-data', 'php', 'composer', *arguments.command))
+
+    elif arguments.action == 'yarn':
+        run(('docker', 'run',
+             '--rm',
+             '--interactive',
+             '--tty',
+             '--user', f'{os.geteuid()}:{os.getegid()}',
+             '--workdir', '/application',
+             '--mount',
+             'type=bind,'
+             f"source={Path(f'{Path(__file__).parent}/application/${project_name}')},"
+             'destination=/application',
+             'node:latest', 'yarn', *arguments.command))
+
+    elif arguments.action == 'start':
+        run(('docker-compose', 'up', *arguments.command))
+
+    elif arguments.action == 'stop':
+        run(('docker-compose', 'down', *arguments.command))
