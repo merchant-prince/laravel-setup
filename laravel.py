@@ -382,6 +382,24 @@ if __name__ == '__main__':
 
             Path('run').chmod(0o755)
 
+            # .gitignore
+            with open('.gitignore', 'w') as file, \
+                    open(f"{template_path('.gitignore')}") as template:
+                file.write(
+                    Template(template.read()).substitute(
+                        # intentionally left blank
+                    )
+                )
+
+            # README.md     @todo: fill the README.md file
+            with open('README.md', 'w') as file, \
+                    open(f"{template_path('README.md')}") as template:
+                file.write(
+                    Template(template.read()).substitute(
+                        # intentionally left blank
+                    )
+                )
+
             with cd('configuration'):
                 with cd('nginx'):
                     with cd('conf.d'):
@@ -414,7 +432,7 @@ if __name__ == '__main__':
                                 open(f"{template_path('docker-compose/services/php/Dockerfile')}") as template:
                             file.write(
                                 Template(template.read()).substitute(
-                                    # template has no variables
+                                    # intentionally left blank
                                 )
                             )
 
@@ -423,7 +441,7 @@ if __name__ == '__main__':
                                 open(f"{template_path('docker-compose/services/php/entrypoint.sh')}") as template:
                             file.write(
                                 Template(template.read()).substitute(
-                                    # template has no variables
+                                    # intentionally left blank
                                 )
                             )
 
