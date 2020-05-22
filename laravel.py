@@ -269,6 +269,12 @@ if __name__ == '__main__':
         default='application.local',
         help='The domain name where the project will be hosted.'
     )
+    parser.subparsers.setup.add_argument(
+        '--with',
+        nargs='*',
+        choices=('authentication',),
+        help='Additional modules to be installed'
+    )
 
     # parse arguments
     arguments = parser.main.parse_args()
@@ -537,5 +543,30 @@ if __name__ == '__main__':
 
                             print(line)
 
+            logging.info('The base project has been successfully set-up. Read the README.md file for more information.')
+
+            # post-installation tasks
+            additional_modules = arguments.__getattribute__('with')
+
+            # authentication
+            if 'authentication' in additional_modules:
+                run(('docker-compose', 'up', '-d'))
+
+                logging.info('Pulling the authentication module...')
+                run(('./run', 'composer', 'require', 'laravel/ui'))
+
+                logging.info('Setting up authentication with Vue...')
+                run(('./run', 'artisan', 'ui', 'vue', '--auth'))
+
+                run(('docker-compose', 'down'))
+
+                git_commands = (
+                    ('git', 'add', '.'),
+                    ('git', 'commit', '-m', 'scaffold authentication')
+                )
+
+                for git_command in git_commands:
+                    run(git_command, check=True)
+
         # Project successfully set-up
-        logging.info('The project has been successfully set-up. Read the README.md file for more information. DOSKOII!')
+        logging.info('Set-up complete. Build something awesome!')
