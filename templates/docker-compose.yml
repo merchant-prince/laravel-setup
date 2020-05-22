@@ -9,8 +9,9 @@ services:
       - ./configuration/nginx/ssl:/etc/nginx/ssl:ro
       - ./application/${project_name}:/var/www/html:ro
     ports:
-      - "80:80"
-      - "443:443"
+      - "80:80"       # nginx:http
+      - "443:443"     # nginx:https
+      - "8080:8080"   # adminer:http
     restart: always
     depends_on:
       - php
@@ -21,12 +22,12 @@ services:
 
   php:
     build:
-      context: ./dockerfiles/php
+      context: ./docker-compose/services/php
       args:
         USER_ID: ${user_id}
         GROUP_ID: ${group_id}
     volumes:
-      - ./dockerfiles/php/entrypoint.sh:/home/www-data/entrypoint.sh:ro
+      - ./docker-compose/services/php/entrypoint.sh:/home/www-data/entrypoint.sh:ro
       - ./application/${project_name}:/var/www/html
     restart: always
     networks:

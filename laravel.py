@@ -2,6 +2,7 @@
 A script to automate the installation of Laravel projects on Docker.
 """
 
+import fileinput
 import logging
 import os
 import re
@@ -12,6 +13,7 @@ from contextlib import contextmanager
 from datetime import datetime, timedelta
 from pathlib import Path
 from string import Template
+from subprocess import run
 from types import SimpleNamespace
 
 from cryptography import x509
@@ -319,10 +321,20 @@ if __name__ == '__main__':
 
         Skeleton.create({
             configuration['project']['name']: {
+                # docker-compose.yml
+                # .gitignore
+                # README.md
+
                 'configuration': {
                     'nginx': {
-                        'conf.d': {},
-                        'ssl': {}
+                        'conf.d': {
+                            # default.conf
+                            # utils.conf
+                        },
+                        'ssl': {
+                            # key.pem
+                            # certificate.pem
+                        }
                     }
                 },
                 'docker-compose': {
@@ -333,7 +345,9 @@ if __name__ == '__main__':
                         }
                     }
                 },
-                'application': {}
+                'application': {
+                    # Laravel application
+                }
             }
         })
 
@@ -446,3 +460,82 @@ if __name__ == '__main__':
                             )
 
                         Path('entrypoint.sh').chmod(0o755)
+
+        # Pull Laravel project
+        logging.info('Pulling a fresh Laravel project...')
+
+        with cd(configuration['project']['name']):
+            with cd('application'):
+                run(
+                    ('docker', 'run',
+                     '--rm',
+                     '--interactive',
+                     '--tty',
+                     '--user',
+                     f'{os.geteuid()}:{os.getegid()}',
+                     '--mount', f'type=bind,source={os.getcwd()},target=/application',
+                     '--workdir', '/application',
+                     'composer', 'create-project',
+                     '--prefer-dist',
+                     '--ignore-platform-reqs',
+                     'laravel/laravel', configuration['project']['name']),
+                    check=True
+                )
+
+        # Initialize git
+        logging.info('Initializing a git repository for the project...')
+
+        with cd(configuration['project']['name']):
+            git_commands = (
+                ('git', 'init'),
+                ('git', 'add', '.'),
+                ('git', 'commit', '-m', 'initial commit'),
+                ('git', 'checkout', '-b', 'development')
+            )
+
+            for git_command in git_commands:
+                run(git_command, check=True)
+
+        # Set environment variables for the Laravel project
+        logging.info('Setting the environment variables for the Laravel project...')
+
+        with cd(configuration['project']['name']):
+            with cd('application'):
+                with cd(configuration['project']['name']):
+                    env = {
+                        'APP_NAME': configuration['project']['name'],
+                        'APP_URL': f"https://{configuration['project']['domain']}",
+
+                        'DB_CONNECTION': 'pgsql',
+                        'DB_HOST': 'postgresql',
+                        'DB_PORT': 5432,
+                        'DB_DATABASE': configuration['services']['postgres']['environment']['db'],
+                        'DB_USERNAME': configuration['services']['postgres']['environment']['user'],
+                        'DB_PASSWORD': configuration['services']['postgres']['environment']['password'],
+
+                        'CACHE_DRIVER': 'redis',
+                        'SESSION_DRIVER': 'redis',
+                        'QUEUE_CONNECTION': 'redis',
+
+                        'REDIS_HOST': 'redis',
+                        'REDIS_PORT': 6379
+                    }
+
+                    # .env
+                    with fileinput.input('.env', inplace=True) as file:
+                        env_regex = re.compile(r'^(?P<key>\w+)=(?P<value>[\S]+)?\s*(?P<remaining>#.*)?$')
+
+                        for line in file:
+                            line = line.strip()
+                            matches = env_regex.match(line)
+
+                            if matches is not None:
+                                matches = matches.groupdict()
+                                line = f"{matches['key']}=" \
+                                       f"{env[matches['key']] if matches['key'] in env else matches['value']}" \
+                                       f"{' ' * 4}{matches['remaining'] or ''}".strip()
+
+                            print(line)
+
+        # Project successfully set-up
+        logging.info('The project has been successfully set-up. Read the README.md file for more information. DOSKOII!')

@@ -1,4 +1,4 @@
-FROM php:latest
+FROM php:fpm
 
 RUN apt-get update \
  && apt-get install -y cron zip libpq-dev libzip-dev \

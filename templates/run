@@ -67,34 +67,6 @@ if __name__ == "__main__":
         help='The yarn command to be run.'
     )
 
-    # start
-    parser.subparsers.start = parser.subparser.add_parser(
-        'start',
-        description='Start the current Laravel project stack on docker.',
-        epilog='Start!',
-        add_help=True,
-        allow_abbrev=False
-    )
-    parser.subparsers.start.add_argument(
-        'command',
-        nargs='*',
-        help="'docker-compose up' arguments."
-    )
-
-    # stop
-    parser.subparsers.stop = parser.subparser.add_parser(
-        'stop',
-        description='Stop the current Laravel project stack on docker.',
-        epilog='Stop!',
-        add_help=True,
-        allow_abbrev=False
-    )
-    parser.subparsers.stop.add_argument(
-        'command',
-        nargs='*',
-        help="'docker-compose down' arguments."
-    )
-
     # parse arguments
     arguments = parser.main.parse_args()
 
@@ -116,9 +88,3 @@ if __name__ == "__main__":
              f"source={Path(f'{Path(__file__).parent}/application/${project_name}')},"
              'destination=/application',
              'node:latest', 'yarn', *arguments.command))
-
-    elif arguments.action == 'start':
-        run(('docker-compose', 'up', *arguments.command))
-
-    elif arguments.action == 'stop':
-        run(('docker-compose', 'down', *arguments.command))
