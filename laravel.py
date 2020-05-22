@@ -272,7 +272,7 @@ if __name__ == '__main__':
     parser.subparsers.setup.add_argument(
         '--with',
         nargs='*',
-        choices=('authentication',),
+        choices=('authentication', 'horizon'),
         help='Additional modules to be installed'
     )
 
@@ -543,6 +543,11 @@ if __name__ == '__main__':
 
                             print(line)
 
+            logging.info('Migrating the database...')
+            run(('docker-compose', 'up', '-d'))
+            run(('./run', 'artisan', 'migrate:fresh'))
+            run(('docker-compose', 'down'))
+
             logging.info('The base project has been successfully set-up. Read the README.md file for more information.')
 
             # post-installation tasks
@@ -557,6 +562,30 @@ if __name__ == '__main__':
 
                 logging.info('Setting up authentication with Vue...')
                 run(('./run', 'artisan', 'ui', 'vue', '--auth'))
+
+                run(('./run', 'artisan', 'migrate:fresh'))
+
+                run(('docker-compose', 'down'))
+
+                git_commands = (
+                    ('git', 'add', '.'),
+                    ('git', 'commit', '-m', 'scaffold authentication')
+                )
+
+                for git_command in git_commands:
+                    run(git_command, check=True)
+
+            # horizon
+            if 'horizon' in additional_modules:
+                run(('docker-compose', 'up', '-d'))
+
+                logging.info('Pulling laravel/horizon package...')
+                run(('./run', 'composer', 'require', 'laravel/horizon'))
+
+                logging.info('Setting up horizon in the project...')
+                run(('./run', 'artisan', 'horizon:install'))
+
+                run(('./run', 'artisan', 'migrate:fresh'))
 
                 run(('docker-compose', 'down'))
 
