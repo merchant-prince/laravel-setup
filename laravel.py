@@ -411,15 +411,6 @@ if __name__ == '__main__':
                     )
                 )
 
-            # README.md     @todo: fill the README.md file
-            with open('README.md', 'w') as file, \
-                    open(f"{template_path('README.md')}") as template:
-                file.write(
-                    Template(template.read()).substitute(
-                        # intentionally left blank
-                    )
-                )
-
             with cd('configuration'):
                 with cd('nginx'):
                     with cd('conf.d'):
