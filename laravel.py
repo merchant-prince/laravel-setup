@@ -272,7 +272,7 @@ if __name__ == '__main__':
     parser.subparsers.setup.add_argument(
         '--with',
         nargs='*',
-        choices=('authentication', 'horizon'),
+        choices=('authentication', 'horizon', 'telescope'),
         help='Additional modules to be installed'
     )
 
@@ -591,7 +591,65 @@ if __name__ == '__main__':
 
                 git_commands = (
                     ('git', 'add', '.'),
-                    ('git', 'commit', '-m', 'scaffold authentication')
+                    ('git', 'commit', '-m', 'scaffold horizon')
+                )
+
+                for git_command in git_commands:
+                    run(git_command, check=True)
+
+            # telescope
+            if 'telescope' in additional_modules:
+                run(('docker-compose', 'up', '-d'))
+
+                logging.info('Pulling laravel/telescope package...')
+                run(('./run', 'composer', 'require', 'laravel/telescope', '--dev'))
+
+                logging.info('Setting up telescope in the project...')
+                run(('./run', 'artisan', 'telescope:install'))
+
+                run(('./run', 'artisan', 'migrate:fresh'))
+
+                run(('docker-compose', 'down'))
+
+                # change the telescope service provider to allow telescope to run in development environment only
+                with cd('application'):
+                    with cd(configuration['project']['name']):
+                        with fileinput.FileInput('app/Providers/TelescopeServiceProvider.php', inplace=True) as file:
+                            for line in file:
+                                if line.strip() == 'public function register()':
+                                    line = '''\
+    public function register()
+    {
+        if ($this->app->isLocal()) {
+            $this->app->register(\\Laravel\\Telescope\\TelescopeServiceProvider::class);
+            $this->registerTelescope();
+        }
+    }
+
+    /**
+     * Register telescope services.
+     *
+     * @return void
+     */
+    protected function registerTelescope()
+'''
+
+                                print(line, end='')
+
+                        with fileinput.FileInput('composer.json', inplace=True) as file:
+                            for line in file:
+                                if line.strip() == '"dont-discover": []':
+                                    line = '''\
+            "dont-discover": [
+                "laravel/telescope"
+            ]
+'''
+
+                                print(line, end='')
+
+                git_commands = (
+                    ('git', 'add', '.'),
+                    ('git', 'commit', '-m', 'scaffold telescope')
                 )
 
                 for git_command in git_commands:
