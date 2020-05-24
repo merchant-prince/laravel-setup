@@ -14,11 +14,13 @@ services:
       - "8080:8080"   # adminer:http
     restart: always
     depends_on:
+      - adminer
       - php
       - postgresql
     networks:
-      - adminer
-      - nginx
+      adminer:
+      nginx:
+      # [selenium-nginx-network-alias]
 
   php:
     build:
@@ -34,6 +36,7 @@ services:
       - nginx
       - postgresql
       - redis
+      # [selenium-php-network]
 
   postgresql:
     image: postgres:latest
@@ -59,11 +62,12 @@ services:
   adminer:
     image: adminer:latest
     depends_on:
-      - nginx
       - postgresql
     restart: always
     networks:
       - adminer
+
+  # [selenium-service]
 
 
 networks:
@@ -71,6 +75,7 @@ networks:
   nginx:
   postgresql:
   redis:
+  # [selenium-network]
 
 
 volumes:

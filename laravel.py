@@ -272,7 +272,7 @@ if __name__ == '__main__':
     parser.subparsers.setup.add_argument(
         '--with',
         nargs='*',
-        choices=('authentication', 'horizon', 'telescope'),
+        choices=('authentication', 'dusk', 'horizon', 'telescope'),
         help='Additional modules to be installed'
     )
 
@@ -565,6 +565,124 @@ if __name__ == '__main__':
 
                 for git_command in git_commands:
                     run(git_command, check=True)
+
+            # dusk
+            if 'dusk' in additional_modules:
+                run(('docker-compose', 'up', '-d'))
+
+                logging.info('Pulling the dusk module...')
+                run(('./run', 'composer', 'require', 'laravel/dusk', '--dev'))
+
+                logging.info('Setting up dusk...')
+                run(('./run', 'artisan', 'dusk:install'))
+
+                run(('docker-compose', 'down'))
+
+                # edit docker-compose.yml
+                with fileinput.FileInput('docker-compose.yml', inplace=True) as file:
+                    for line in file:
+                        if line.strip() == '# [selenium-nginx-network-alias]':
+                            line = f'''\
+      selenium:
+        aliases:
+          - {configuration['project']['domain']}
+'''
+
+                        if line.strip() == '# [selenium-php-network]':
+                            line = f'''\
+      - selenium
+'''
+
+                        if line.strip() == '# [selenium-service]':
+                            line = '''\
+  selenium:
+    image: selenium/hub:latest
+    depends_on:
+      - php
+    ports:
+      - "4444:4444"
+    networks:
+      - selenium
+
+  firefox:
+    image: selenium/node-firefox:latest
+    depends_on:
+      - selenium
+    volumes:
+      - /dev/shm:/dev/shm
+    environment:
+      HUB_HOST: selenium
+    networks:
+      - selenium
+'''
+
+                        if line.strip() == '# [selenium-network]':
+                            line = '''\
+  selenium:
+'''
+
+                        print(line, end='')
+
+                with cd('application'):
+                    with cd(configuration['project']['name']):
+                        # edit tests/DuskTestCase.php
+                        with cd('tests'):
+                            with open('DuskTestCase.php') as file:
+                                contents = file.read()
+
+                            # comment chrome-driver start
+                            contents = contents.replace(
+                                'static::startChromeDriver();',
+                                '// static::startChromeDriver();',
+                                1
+                            )
+
+                            # edit driver method to use selenium's firefox node
+                            match = tuple(
+                                re.finditer(
+                                    r' {4}protected function driver\(\)\n {4}\{\n {8}.*?\n {4}\}',
+                                    contents,
+                                    re.MULTILINE | re.DOTALL
+                                )
+                            )[0]
+
+                            replacement = '''\
+    protected function driver()
+    {
+        return RemoteWebDriver::create(
+            'http://selenium:4444/wd/hub',
+            DesiredCapabilities::firefox()
+                ->setCapability("acceptInsecureCerts", true)
+        );
+    }
+'''
+
+                            contents = ''.join((contents[:match.start()], replacement, contents[match.end():]))
+
+                            with open('DuskTestCase.php', 'w') as file:
+                                file.write(contents)
+
+                git_commands = (
+                    ('git', 'add', '.'),
+                    ('git', 'commit', '-m', 'scaffold dusk')
+                )
+
+                for git_command in git_commands:
+                    run(git_command, check=True)
+
+            else:
+                # remove selenium comments in docker-compose.yml
+                with fileinput.FileInput('docker-compose.yml', inplace=True) as file:
+                    selenium_comments = (
+                        '# [selenium-nginx-network-alias]',
+                        '# [selenium-php-network]',
+                        '# [selenium-service]',
+                        '# [selenium-network]'
+                    )
+
+                    for line in file:
+                        if line.strip() not in selenium_comments:
+                            print(line, end='')
 
             # horizon
             if 'horizon' in additional_modules:
