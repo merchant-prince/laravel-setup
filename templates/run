@@ -85,6 +85,6 @@ if __name__ == "__main__":
              '--workdir', '/application',
              '--mount',
              'type=bind,'
-             f"source={Path(f'{Path(__file__).parent}/application/${project_name}')},"
+             f"source={Path(f'{Path(__file__).parent.absolute()}/application/${project_name}')},"
              'destination=/application',
              'node:latest', 'yarn', *arguments.command))
