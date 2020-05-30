@@ -9,16 +9,19 @@ services:
       - ./configuration/nginx/ssl:/etc/nginx/ssl:ro
       - ./application/${project_name}:/var/www/html:ro
     ports:
-      - "80:80"       # nginx:http
-      - "443:443"     # nginx:https
-      - "8080:8080"   # adminer:http
+      - "80:80"     # nginx:http
+      - "443:443"   # nginx:https
+      - "8080:8080" # adminer:http
+      - "8025:8025" # mailhog:http
     restart: always
     depends_on:
       - adminer
+      - mailhog
       - php
       - postgresql
     networks:
       adminer:
+      mailhog:
       nginx:
       # [selenium-nginx-network-alias]
 
@@ -33,6 +36,7 @@ services:
       - ./application/${project_name}:/var/www/html
     restart: always
     networks:
+      - mailhog
       - nginx
       - postgresql
       - redis
@@ -67,11 +71,18 @@ services:
     networks:
       - adminer
 
+  mailhog:
+    image: mailhog/mailhog
+    restart: always
+    networks:
+      - mailhog
+
   # [selenium-service]
 
 
 networks:
   adminer:
+  mailhog:
   nginx:
   postgresql:
   redis:

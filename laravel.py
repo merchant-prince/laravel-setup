@@ -309,9 +309,6 @@ if __name__ == '__main__':
                         'certificate': 'certificate.pem'
                     }
                 },
-                'adminer': {
-                    'port': 8080  # for the administration panel (ui)
-                },
                 'postgres': {
                     'environment': {
                         'db': arguments.project_name.lower(),
@@ -387,7 +384,7 @@ if __name__ == '__main__':
                         group_id=os.getegid(),
                         postgres_db=configuration['services']['postgres']['environment']['db'],
                         postgres_user=configuration['services']['postgres']['environment']['user'],
-                        postgres_password=configuration['services']['postgres']['environment']['password'],
+                        postgres_password=configuration['services']['postgres']['environment']['password']
                     )
                 )
 
@@ -430,8 +427,7 @@ if __name__ == '__main__':
                                 open(f"{template_path('configuration/nginx/conf.d/utils.conf')}") as template:
                             file.write(
                                 Template(template.read()).substitute(
-                                    project_domain=configuration['project']['domain'],
-                                    adminer_port=configuration['services']['adminer']['port']
+                                    project_domain=configuration['project']['domain']
                                 )
                             )
 
@@ -515,7 +511,12 @@ if __name__ == '__main__':
                         'QUEUE_CONNECTION': 'redis',
 
                         'REDIS_HOST': 'redis',
-                        'REDIS_PORT': 6379
+                        'REDIS_PORT': 6379,
+
+                        'MAIL_HOST': 'mailhog',
+                        'MAIL_PORT': 1025,
+                        'MAIL_FROM_NAME': (configuration['project']['name']).lower(),
+                        'MAIL_FROM_ADDRESS': f"{(configuration['project']['name']).lower()}@{configuration['project']['domain']}"
                     }
 
                     # .env
@@ -528,9 +529,9 @@ if __name__ == '__main__':
 
                             if matches is not None:
                                 matches = matches.groupdict()
-                                line = f"{matches['key']}=" \
-                                       f"{env[matches['key']] if matches['key'] in env else matches['value']}" \
-                                       f"{' ' * 4}{matches['remaining'] or ''}".strip()
+                                line = (f"{matches['key']}="
+                                        f"{env[matches['key']] if matches['key'] in env else matches['value']}"
+                                        f"{' ' * 4}{matches['remaining'] or ''}").strip()
 
                             print(line)
 
@@ -539,7 +540,7 @@ if __name__ == '__main__':
             run(('./run', 'artisan', 'migrate:fresh'))
             run(('docker-compose', 'down'))
 
-            logging.info('The base project has been successfully set-up. Read the README.md file for more information.')
+            logging.info('The base project has been successfully set-up.')
 
             # post-installation tasks
             additional_modules = arguments.__getattribute__('with')
