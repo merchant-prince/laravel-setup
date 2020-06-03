@@ -746,6 +746,15 @@ if __name__ == '__main__':
 
                                 print(line, end='')
 
+                        with fileinput.FileInput('app/Console/Kernel.php', inplace=True) as file:
+                            for line in file:
+                                if line.strip() == "// $schedule->command('inspire')->hourly();":
+                                    line = '''\
+        $schedule->command('horizon:snapshot')->everyFiveMinutes();
+'''
+
+                                print(line, end='')
+
                         with fileinput.FileInput('composer.json', inplace=True) as file:
                             for line in file:
                                 if line.strip() == '"dont-discover": []':
