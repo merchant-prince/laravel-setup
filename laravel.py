@@ -685,6 +685,14 @@ if __name__ == '__main__':
                         if line.strip() not in selenium_comments:
                             print(line, end='')
 
+                git_commands = (
+                    ('git', 'add', '.'),
+                    ('git', 'commit', '-m', 'remove selenium comments')
+                )
+
+                for git_command in git_commands:
+                    run(git_command, check=True)
+
             # horizon
             if 'horizon' in additional_modules:
                 run(('docker-compose', 'up', '-d'))
