@@ -543,7 +543,7 @@ if __name__ == '__main__':
             logging.info('The base project has been successfully set-up.')
 
             # post-installation tasks
-            additional_modules = arguments.__getattribute__('with')
+            additional_modules = arguments.__getattribute__('with') or []
 
             # authentication
             if 'authentication' in additional_modules:
