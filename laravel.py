@@ -338,6 +338,11 @@ if __name__ == '__main__':
                         'ssl': {
                             # key.pem
                             # certificate.pem
+                        },
+                        'supervisor': {
+                            'conf.d': {
+                                # supervisord.conf
+                            }
                         }
                     }
                 },
@@ -410,6 +415,7 @@ if __name__ == '__main__':
                 )
 
             with cd('configuration'):
+                # nginx
                 with cd('nginx'):
                     with cd('conf.d'):
                         # default.conf
@@ -429,6 +435,17 @@ if __name__ == '__main__':
                             file.write(
                                 Template(template.read()).substitute(
                                     project_domain=configuration['project']['domain']
+                                )
+                            )
+
+                with cd('supervisor'):
+                    with cd('conf.d'):
+                        with open('supervisord.conf', 'w') as file, \
+                                open(
+                                    f"{template_path('configuration/supervisor/conf.d/supervisord.conf')}") as template:
+                            file.write(
+                                Template(template.read()).substitute(
+                                    # intentionally left blank
                                 )
                             )
 
@@ -590,6 +607,7 @@ if __name__ == '__main__':
           - {configuration['project']['domain']}
 '''
 
+                        #TODO: REFACTOR TO KEY: VALUE
                         if line.strip() == '# [selenium-php-network]':
                             line = f'''\
       - selenium
@@ -673,7 +691,7 @@ if __name__ == '__main__':
                     run(git_command, check=True)
 
             else:
-                # remove selenium comments in docker-compose.yml
+                # remove selenium comments from docker-compose.yml
                 with fileinput.FileInput('docker-compose.yml', inplace=True) as file:
                     selenium_comments = (
                         '# [selenium-nginx-network-alias]',
@@ -708,9 +726,44 @@ if __name__ == '__main__':
 
                 run(('docker-compose', 'down'))
 
+                # edit supervisord.conf
+                with cd('configuration'):
+                    with cd('supervisor'):
+                        with cd('conf.d'):
+                            with fileinput.FileInput('supervisord.conf', inplace=True) as file:
+                                for line in file:
+                                    if line.strip() == '# [horizon]':
+                                        line = '''\
+[program:horizon]
+command=php /var/www/html/artisan horizon
+user=www-data
+stopwaitsecs=3600
+autorestart=true
+redirect_stderr=true
+'''
+                                    print(line, end='')
+
                 git_commands = (
                     ('git', 'add', '.'),
                     ('git', 'commit', '-m', 'scaffold horizon')
+                )
+
+                for git_command in git_commands:
+                    run(git_command, check=True)
+
+            else:
+                # remove horizon comment from supervisord.conf
+                with cd('configuration'):
+                    with cd('supervisor'):
+                        with cd('conf.d'):
+                            with fileinput.FileInput('supervisord.conf', inplace=True) as file:
+                                for line in file:
+                                    if line.strip() != '# [horizon]':
+                                        print(line, end='')
+
+                git_commands = (
+                    ('git', 'add', '.'),
+                    ('git', 'commit', '-m', 'remove horizon comment')
                 )
 
                 for git_command in git_commands:
