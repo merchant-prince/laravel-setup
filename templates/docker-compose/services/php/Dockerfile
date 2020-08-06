@@ -43,8 +43,8 @@ RUN touch /var/log/application.cron.log \
  && chown www-data:www-data /var/log/application.cron.log \
  && echo "* * * * *    www-data    php /var/www/html/artisan schedule:run >> /var/log/application.cron.log 2>&1" >> /etc/crontab
 
-VOLUME [ "/var/www/html", "/home/www-data/entrypoint.sh" ]
+VOLUME [ "/var/www/html", "/etc/supervisor/conf.d/supervisord.conf" ]
 
-ENTRYPOINT [ "/home/www-data/entrypoint.sh" ]
+ENTRYPOINT [ "/usr/bin/supervisord" ]
 
-CMD [ "php-fpm" ]
+CMD [ "-c", "/etc/supervisor/conf.d/supervisord.conf" ]
