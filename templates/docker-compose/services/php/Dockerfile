@@ -1,13 +1,13 @@
 FROM php:fpm
 
 RUN apt-get update \
- && apt-get install -y cron zip libpq-dev libzip-dev \
+ && apt-get install -y cron libpq-dev libzip-dev supervisor zip \
  && docker-php-ext-install bcmath pdo_pgsql pgsql pcntl zip \
  && docker-php-ext-configure pgsql \
  && docker-php-ext-configure zip \
  && pecl install redis \
  && docker-php-ext-enable redis \
- && apt autoremove \
+ && apt-get autoremove \
  && rm -rf /var/lib/apt/lists/*
 
 # Setup composer
