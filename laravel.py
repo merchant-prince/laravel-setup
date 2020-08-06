@@ -350,7 +350,6 @@ if __name__ == '__main__':
                     'services': {
                         'php': {
                             # Dockerfile
-                            # entrypoint.sh*
                         }
                     }
                 },
@@ -460,17 +459,6 @@ if __name__ == '__main__':
                                     # intentionally left blank
                                 )
                             )
-
-                        # entrypoint.sh (php)
-                        with open('entrypoint.sh', 'w') as file, \
-                                open(f"{template_path('docker-compose/services/php/entrypoint.sh')}") as template:
-                            file.write(
-                                Template(template.read()).substitute(
-                                    # intentionally left blank
-                                )
-                            )
-
-                        Path('entrypoint.sh').chmod(0o755)
 
         # Pull Laravel project
         logging.info('Pulling a fresh Laravel project...')
