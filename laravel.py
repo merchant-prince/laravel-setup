@@ -338,11 +338,11 @@ if __name__ == '__main__':
                         'ssl': {
                             # key.pem
                             # certificate.pem
-                        },
-                        'supervisor': {
-                            'conf.d': {
-                                # supervisord.conf
-                            }
+                        }
+                    },
+                    'supervisor': {
+                        'conf.d': {
+                            # supervisord.conf
                         }
                     }
                 },
@@ -437,6 +437,7 @@ if __name__ == '__main__':
                                 )
                             )
 
+                # supervisor
                 with cd('supervisor'):
                     with cd('conf.d'):
                         with open('supervisord.conf', 'w') as file, \
