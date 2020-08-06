@@ -15,6 +15,7 @@ from pathlib import Path
 from string import Template
 from subprocess import run
 from types import SimpleNamespace
+from typing import Optional
 
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
@@ -84,7 +85,7 @@ class Skeleton:
         Args:
             structure (dict):
                 The directory structure to create in the current directory.
-                This is generally a dictionary of dictionaries.
+                This is a dictionary of dictionaries (of dictionaries of dictionaries ...).
                 The empty dictionaries represent directories to be created.
 
                 e.g.: { 'one': {
@@ -108,11 +109,11 @@ class Skeleton:
             structure (Mapping): The directory structure to create in the current directory.
         """
 
-        for name, structure in structure.items():
+        for name, inner_structure in structure.items():
             os.mkdir(name)
 
             with cd(name):
-                Skeleton._create(structure)
+                Skeleton._create(inner_structure)
 
     @staticmethod
     def _validate(structure: Mapping) -> None:
@@ -126,9 +127,9 @@ class Skeleton:
             ValueError: If the given structure is invalid.
         """
 
-        for name, structure in structure.items():
-            if isinstance(structure, Mapping):
-                Skeleton._validate(structure)
+        for name, inner_structure in structure.items():
+            if isinstance(inner_structure, Mapping):
+                Skeleton._validate(inner_structure)
             else:
                 raise ValueError('The directory structure provided is ill-formed.')
 
@@ -158,8 +159,8 @@ class Ssl:
         self._hostname: str = hostname
         self._key_size: int = key_size
         self._validity: int = validity
-        self._key: bytes = None
-        self._certificate: bytes = None
+        self._key: Optional[bytes] = None
+        self._certificate: Optional[bytes] = None
 
     def generate(self):
         """
@@ -273,7 +274,7 @@ if __name__ == '__main__':
         '--with',
         nargs='*',
         choices=('authentication', 'dusk', 'horizon', 'telescope'),
-        help='Additional modules to be installed'
+        help='Additional modules to be installed.'
     )
 
     # parse arguments
@@ -285,13 +286,13 @@ if __name__ == '__main__':
         logging.info('Validating provided values...')
 
         if not Validation.is_pascal_case(arguments.project_name):
-            raise RuntimeError(f'The project name: {arguments.project_name} is not pascal-cased.')
+            raise RuntimeError(f"The project name: '{arguments.project_name}' is not pascal-cased.")
 
         if Validation.directory_exists(arguments.project_name):
-            raise RuntimeError(f'The directory {arguments.project_name} already exists in {Path.cwd()}.')
+            raise RuntimeError(f"The directory: '{arguments.project_name}' already exists at `{Path.cwd()}`.")
 
         if not Validation.domain_is_valid(arguments.domain):
-            raise RuntimeError(f'The domain: {arguments.domain} is invalid.')
+            raise RuntimeError(f"The domain: '{arguments.domain}' is invalid.")
 
         # configuration
         logging.info('Creating configuration values...')
