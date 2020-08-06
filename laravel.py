@@ -721,7 +721,7 @@ if __name__ == '__main__':
                         with cd('conf.d'):
                             with fileinput.FileInput('supervisord.conf', inplace=True) as file:
                                 for line in file:
-                                    if line.strip() == '# [horizon]':
+                                    if line.strip() == '# [horizon-block]':
                                         line = '''\
 [program:horizon]
 command=php /var/www/html/artisan horizon
@@ -747,7 +747,7 @@ redirect_stderr=true
                         with cd('conf.d'):
                             with fileinput.FileInput('supervisord.conf', inplace=True) as file:
                                 for line in file:
-                                    if line.strip() != '# [horizon]':
+                                    if line.strip() != '# [horizon-block]':
                                         print(line, end='')
 
                 git_commands = (
