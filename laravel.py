@@ -599,7 +599,7 @@ if __name__ == '__main__':
                         #TODO: REFACTOR TO KEY: VALUE
                         if line.strip() == '# [selenium-php-network]':
                             line = f'''\
-      - selenium
+      selenium:
 '''
 
                         if line.strip() == '# [selenium-service]':
@@ -611,7 +611,7 @@ if __name__ == '__main__':
     ports:
       - "4444:4444"
     networks:
-      - selenium
+      selenium:
 
   firefox:
     image: selenium/node-firefox:latest
@@ -622,7 +622,7 @@ if __name__ == '__main__':
     environment:
       HUB_HOST: selenium
     networks:
-      - selenium
+      selenium:
 '''
 
                         if line.strip() == '# [selenium-network]':

@@ -37,10 +37,10 @@ services:
       - ./application/${project_name}:/var/www/html
     restart: always
     networks:
-      - mailhog
-      - nginx
-      - postgresql
-      - redis
+      mailhog:
+      nginx:
+      postgresql:
+      redis:
       # [selenium-php-network]
 
   postgresql:
@@ -53,8 +53,8 @@ services:
       POSTGRES_PASSWORD: "${postgres_password}"
     restart: always
     networks:
-      - adminer
-      - postgresql
+      adminer:
+      postgresql:
 
   redis:
     image: redis:latest
@@ -62,7 +62,7 @@ services:
       - redis:/data
     restart: always
     networks:
-      - redis
+      redis:
 
   adminer:
     image: adminer:latest
@@ -70,13 +70,13 @@ services:
       - postgresql
     restart: always
     networks:
-      - adminer
+      adminer:
 
   mailhog:
     image: mailhog/mailhog
     restart: always
     networks:
-      - mailhog
+      mailhog:
 
   # [selenium-service]
 
