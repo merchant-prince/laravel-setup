@@ -32,7 +32,7 @@ services:
         USER_ID: ${user_id}
         GROUP_ID: ${group_id}
     volumes:
-      - ./docker-compose/services/php/entrypoint.sh:/home/www-data/entrypoint.sh:ro
+      - ./configuration/supervisor/conf.d/supervisord.conf:/etc/supervisor/conf.d/supervisord.conf:ro
       - ./application/${project_name}:/var/www/html
     restart: always
     networks:
