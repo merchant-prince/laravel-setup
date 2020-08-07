@@ -235,6 +235,7 @@ def template_path(path: str = '') -> Path:
 
 # START #
 if __name__ == '__main__':
+
     logging.basicConfig(
         format='[%(levelname)s]: %(msg)s',
         level=logging.INFO
@@ -611,6 +612,7 @@ redirect_stderr=true
                     run(git_command, check=True)
 
             else:
+
                 # remove horizon comment from supervisord.conf
                 with cd('configuration/supervisor/conf.d'):
                     with fileinput.FileInput('supervisord.conf', inplace=True) as file:
