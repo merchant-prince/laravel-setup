@@ -91,7 +91,9 @@ class Skeleton:
                 e.g.: { 'one': {
                             'eleven': {},
                             'twelve': {
-                                'inner-directory': {}
+                                'inner-directory': {
+                                    ...
+                                }
                             }
                         }
                     }
@@ -226,7 +228,7 @@ class Ssl:
 
 
 def template_path(path: str = '') -> Path:
-    """Get a template's absolute path from the relative path specified."""
+    """Get a template's absolute path from a path relative to the templates directory."""
 
     return Path(f'{Path(__file__).parent}/templates/{path}')
 
@@ -362,23 +364,21 @@ if __name__ == '__main__':
         # Generate ssl certificates
         logging.info('Generating SSL certificates...')
 
-        with cd(configuration['project']['name']):
-            with cd('configuration'):
-                with cd('nginx'):
-                    with cd('ssl'):
-                        Ssl(
-                            hostname=configuration['project']['domain']
-                        ).generate(
-                            # generate the ssl certificates...
-                        ).write(
-                            key_name=configuration['services']['nginx']['ssl']['key'],
-                            certificate_name=configuration['services']['nginx']['ssl']['certificate']
-                        )
+        with cd(f"{configuration['project']['name']}/configuration/nginx/ssl"):
+            Ssl(
+                hostname=configuration['project']['domain']
+            ).generate(
+                # generate the ssl certificates...
+            ).write(
+                key_name=configuration['services']['nginx']['ssl']['key'],
+                certificate_name=configuration['services']['nginx']['ssl']['certificate']
+            )
 
         # Create configuration files
         logging.info("Generating the project's configuration files...")
 
         with cd(configuration['project']['name']):
+
             # docker-compose.yml
             with open('docker-compose.yml', 'w') as file, \
                     open(f"{template_path('docker-compose.yml')}") as template:
@@ -415,72 +415,68 @@ if __name__ == '__main__':
 
             with cd('configuration'):
                 # nginx
-                with cd('nginx'):
-                    with cd('conf.d'):
-                        # default.conf
-                        with open('default.conf', 'w') as file, \
-                                open(f"{template_path('configuration/nginx/conf.d/default.conf')}") as template:
-                            file.write(
-                                Template(template.read()).substitute(
-                                    project_domain=configuration['project']['domain'],
-                                    ssl_key=configuration['services']['nginx']['ssl']['key'],
-                                    ssl_certificate=configuration['services']['nginx']['ssl']['certificate']
-                                )
+                with cd('nginx/conf.d'):
+                    # default.conf
+                    with open('default.conf', 'w') as file, \
+                            open(f"{template_path('configuration/nginx/conf.d/default.conf')}") as template:
+                        file.write(
+                            Template(template.read()).substitute(
+                                project_domain=configuration['project']['domain'],
+                                ssl_key=configuration['services']['nginx']['ssl']['key'],
+                                ssl_certificate=configuration['services']['nginx']['ssl']['certificate']
                             )
+                        )
 
-                        # utils.conf
-                        with open('utils.conf', 'w') as file, \
-                                open(f"{template_path('configuration/nginx/conf.d/utils.conf')}") as template:
-                            file.write(
-                                Template(template.read()).substitute(
-                                    project_domain=configuration['project']['domain']
-                                )
+                    # utils.conf
+                    with open('utils.conf', 'w') as file, \
+                            open(f"{template_path('configuration/nginx/conf.d/utils.conf')}") as template:
+                        file.write(
+                            Template(template.read()).substitute(
+                                project_domain=configuration['project']['domain']
                             )
+                        )
 
                 # supervisor
-                with cd('supervisor'):
-                    with cd('conf.d'):
-                        with open('supervisord.conf', 'w') as file, \
-                                open(
-                                    f"{template_path('configuration/supervisor/conf.d/supervisord.conf')}") as template:
-                            file.write(
-                                Template(template.read()).substitute(
-                                    # intentionally left blank
-                                )
+                with cd('supervisor/conf.d'):
+                    with open('supervisord.conf', 'w') as file, \
+                            open(
+                                f"{template_path('configuration/supervisor/conf.d/supervisord.conf')}"
+                            ) as template:
+                        file.write(
+                            Template(template.read()).substitute(
+                                # intentionally left blank
                             )
+                        )
 
-            with cd('docker-compose'):
-                with cd('services'):
-                    with cd('php'):
-                        # Dockerfile (php)
-                        with open('Dockerfile', 'w') as file, \
-                                open(f"{template_path('docker-compose/services/php/Dockerfile')}") as template:
-                            file.write(
-                                Template(template.read()).substitute(
-                                    # intentionally left blank
-                                )
-                            )
+            with cd('docker-compose/services/php'):
+                # Dockerfile (php)
+                with open('Dockerfile', 'w') as file, \
+                        open(f"{template_path('docker-compose/services/php/Dockerfile')}") as template:
+                    file.write(
+                        Template(template.read()).substitute(
+                            # intentionally left blank
+                        )
+                    )
 
         # Pull Laravel project
         logging.info('Pulling a fresh Laravel project...')
 
-        with cd(configuration['project']['name']):
-            with cd('application'):
-                run(
-                    ('docker', 'run',
-                     '--rm',
-                     '--interactive',
-                     '--tty',
-                     '--user',
-                     f'{os.geteuid()}:{os.getegid()}',
-                     '--mount', f'type=bind,source={os.getcwd()},target=/application',
-                     '--workdir', '/application',
-                     'composer', 'create-project',
-                     '--prefer-dist',
-                     '--ignore-platform-reqs',
-                     'laravel/laravel', configuration['project']['name']),
-                    check=True
-                )
+        with cd(f"{configuration['project']['name']}/application"):
+            run(
+                ('docker', 'run',
+                 '--rm',
+                 '--interactive',
+                 '--tty',
+                 '--user',
+                 f'{os.geteuid()}:{os.getegid()}',
+                 '--mount', f'type=bind,source={os.getcwd()},target=/application',
+                 '--workdir', '/application',
+                 'composer', 'create-project',
+                 '--prefer-dist',
+                 '--ignore-platform-reqs',
+                 'laravel/laravel', configuration['project']['name']),
+                check=True
+            )
 
         # Initialize git
         logging.info('Initializing a git repository for the project...')
@@ -500,49 +496,50 @@ if __name__ == '__main__':
         logging.info('Setting the environment variables for the Laravel project...')
 
         with cd(configuration['project']['name']):
-            with cd('application'):
-                with cd(configuration['project']['name']):
-                    env = {
-                        'APP_NAME': configuration['project']['name'],
-                        'APP_URL': f"https://{configuration['project']['domain']}",
 
-                        'DB_CONNECTION': 'pgsql',
-                        'DB_HOST': 'postgresql',
-                        'DB_PORT': 5432,
-                        'DB_DATABASE': configuration['services']['postgres']['environment']['db'],
-                        'DB_USERNAME': configuration['services']['postgres']['environment']['user'],
-                        'DB_PASSWORD': configuration['services']['postgres']['environment']['password'],
+            with cd(f"application/{configuration['project']['name']}"):
+                env = {
+                    'APP_NAME': configuration['project']['name'],
+                    'APP_URL': f"https://{configuration['project']['domain']}",
 
-                        'CACHE_DRIVER': 'redis',
-                        'SESSION_DRIVER': 'redis',
-                        'QUEUE_CONNECTION': 'redis',
+                    'DB_CONNECTION': 'pgsql',
+                    'DB_HOST': 'postgresql',
+                    'DB_PORT': 5432,
+                    'DB_DATABASE': configuration['services']['postgres']['environment']['db'],
+                    'DB_USERNAME': configuration['services']['postgres']['environment']['user'],
+                    'DB_PASSWORD': configuration['services']['postgres']['environment']['password'],
 
-                        'REDIS_HOST': 'redis',
-                        'REDIS_PORT': 6379,
+                    'CACHE_DRIVER': 'redis',
+                    'SESSION_DRIVER': 'redis',
+                    'QUEUE_CONNECTION': 'redis',
 
-                        'MAIL_HOST': 'mailhog',
-                        'MAIL_PORT': 1025,
-                        'MAIL_FROM_NAME': (configuration['project']['name']).lower(),
-                        'MAIL_FROM_ADDRESS': f"{(configuration['project']['name']).lower()}@{configuration['project']['domain']}"
-                    }
+                    'REDIS_HOST': 'redis',
+                    'REDIS_PORT': 6379,
 
-                    # .env
-                    with fileinput.input('.env', inplace=True) as file:
-                        env_regex = re.compile(r'^(?P<key>\w+)=(?P<value>[\S]+)?\s*(?P<remaining>#.*)?$')
+                    'MAIL_HOST': 'mailhog',
+                    'MAIL_PORT': 1025,
+                    'MAIL_FROM_NAME': (configuration['project']['name']).lower(),
+                    'MAIL_FROM_ADDRESS': f"{(configuration['project']['name']).lower()}@{configuration['project']['domain']}"
+                }
 
-                        for line in file:
-                            line = line.strip()
-                            matches = env_regex.match(line)
+                # .env
+                with fileinput.input('.env', inplace=True) as file:
+                    env_regex = re.compile(r'^(?P<key>\w+)=(?P<value>[\S]+)?\s*(?P<remaining>#.*)?$')
 
-                            if matches is not None:
-                                matches = matches.groupdict()
-                                line = (f"{matches['key']}="
-                                        f"{env[matches['key']] if matches['key'] in env else matches['value']}"
-                                        f"{' ' * 4}{matches['remaining'] or ''}").strip()
+                    for line in file:
+                        line = line.strip()
+                        matches = env_regex.match(line)
 
-                            print(line)
+                        if matches is not None:
+                            matches = matches.groupdict()
+                            line = (f"{matches['key']}="
+                                    f"{env[matches['key']] if matches['key'] in env else matches['value']}"
+                                    f"{' ' * 4}{matches['remaining'] or ''}").strip()
+
+                        print(line)
 
             logging.info('Migrating the database...')
+
             run(('docker-compose', 'up', '-d'))
             run(('./run', 'artisan', 'migrate:fresh'))
             run(('docker-compose', 'down'))
@@ -575,35 +572,24 @@ if __name__ == '__main__':
                     run(git_command, check=True)
 
             # dusk
-            if 'dusk' in additional_modules:
-                run(('docker-compose', 'up', '-d'))
-
-                logging.info('Pulling the dusk module...')
-                run(('./run', 'composer', 'require', 'laravel/dusk', '--dev'))
-
-                logging.info('Setting up dusk...')
-                run(('./run', 'artisan', 'dusk:install'))
-
-                run(('docker-compose', 'down'))
-
-                # edit docker-compose.yml
-                with fileinput.FileInput('docker-compose.yml', inplace=True) as file:
-                    for line in file:
-                        if line.strip() == '# [selenium-nginx-network-alias]':
-                            line = f'''\
+            dusk_placeholder_data = [
+                {
+                    'key': '# [selenium-nginx-network-alias]',
+                    'value': f'''\
       selenium:
         aliases:
           - {configuration['project']['domain']}
 '''
-
-                        #TODO: REFACTOR TO KEY: VALUE
-                        if line.strip() == '# [selenium-php-network]':
-                            line = f'''\
+                },
+                {
+                    'key': '# [selenium-php-network]',
+                    'value': '''\
       selenium:
 '''
-
-                        if line.strip() == '# [selenium-service]':
-                            line = '''\
+                },
+                {
+                    'key': '# [selenium-service]',
+                    'value': '''\
   selenium:
     image: selenium/hub:latest
     depends_on:
@@ -624,52 +610,71 @@ if __name__ == '__main__':
     networks:
       selenium:
 '''
-
-                        if line.strip() == '# [selenium-network]':
-                            line = '''\
+                },
+                {
+                    'key': '# [selenium-network]',
+                    'value': '''\
   selenium:
 '''
+                }
+            ]
+
+            if 'dusk' in additional_modules:
+                run(('docker-compose', 'up', '-d'))
+
+                logging.info('Pulling the dusk module...')
+                run(('./run', 'composer', 'require', 'laravel/dusk', '--dev'))
+
+                logging.info('Setting up dusk...')
+                run(('./run', 'artisan', 'dusk:install'))
+
+                run(('docker-compose', 'down'))
+
+                # edit docker-compose.yml
+                with fileinput.FileInput('docker-compose.yml', inplace=True) as file:
+                    for line in file:
+                        for placeholder_datum in dusk_placeholder_data:
+                            if line.strip() == placeholder_datum['key']:
+                                line = placeholder_datum['value']
 
                         print(line, end='')
 
-                with cd('application'):
-                    with cd(configuration['project']['name']):
-                        # edit tests/DuskTestCase.php
-                        with cd('tests'):
-                            with open('DuskTestCase.php') as file:
-                                contents = file.read()
+                with cd(f"application/{configuration['project']['name']}/tests"):
+                    # edit tests/DuskTestCase.php
+                    with open('DuskTestCase.php') as file:
+                        contents = file.read()
 
-                            # comment chrome-driver start
-                            contents = contents.replace(
-                                'static::startChromeDriver();',
-                                '// static::startChromeDriver();',
-                                1
-                            )
+                    # comment chrome-driver start
+                    contents = contents.replace(
+                        'static::startChromeDriver();',
+                        '// static::startChromeDriver();',
+                        1
+                    )
 
-                            # edit driver method to use selenium's firefox node
-                            match = tuple(
-                                re.finditer(
-                                    r' {4}protected function driver\(\)\n {4}\{\n {8}.*?\n {4}\}',
-                                    contents,
-                                    re.MULTILINE | re.DOTALL
-                                )
-                            )[0]
+                    # edit driver method to use selenium's firefox node
+                    match = tuple(
+                        re.finditer(
+                            r' {4}protected function driver\(\)\n {4}\{\n {8}.*?\n {4}\}',
+                            contents,
+                            re.MULTILINE | re.DOTALL
+                        )
+                    )[0]
 
-                            replacement = '''\
-    protected function driver()
-    {
-        return RemoteWebDriver::create(
-            'http://selenium:4444/wd/hub',
-            DesiredCapabilities::firefox()
-                ->setCapability("acceptInsecureCerts", true)
-        );
-    }
-'''
+                    replacement = '''\
+                                      protected function driver()
+                                      {
+                                      return RemoteWebDriver::create(
+                                      'http://selenium:4444/wd/hub',
+                                      DesiredCapabilities::firefox()
+                                      ->setCapability("acceptInsecureCerts", true)
+                                      );
+                                      }
+                                      '''
 
-                            contents = ''.join((contents[:match.start()], replacement, contents[match.end():]))
+                    contents = ''.join((contents[:match.start()], replacement, contents[match.end():]))
 
-                            with open('DuskTestCase.php', 'w') as file:
-                                file.write(contents)
+                    with open('DuskTestCase.php', 'w') as file:
+                        file.write(contents)
 
                 git_commands = (
                     ('git', 'add', '.'),
@@ -682,15 +687,10 @@ if __name__ == '__main__':
             else:
                 # remove selenium comments from docker-compose.yml
                 with fileinput.FileInput('docker-compose.yml', inplace=True) as file:
-                    selenium_comments = (
-                        '# [selenium-nginx-network-alias]',
-                        '# [selenium-php-network]',
-                        '# [selenium-service]',
-                        '# [selenium-network]'
-                    )
 
                     for line in file:
-                        if line.strip() not in selenium_comments:
+                        if line.strip() not in [placeholder_datum['key'] for placeholder_datum in
+                                                dusk_placeholder_data]:
                             print(line, end='')
 
                 git_commands = (
@@ -716,13 +716,11 @@ if __name__ == '__main__':
                 run(('docker-compose', 'down'))
 
                 # edit supervisord.conf
-                with cd('configuration'):
-                    with cd('supervisor'):
-                        with cd('conf.d'):
-                            with fileinput.FileInput('supervisord.conf', inplace=True) as file:
-                                for line in file:
-                                    if line.strip() == '# [horizon-block]':
-                                        line = '''\
+                with cd('configuration/supervisor/conf.d'):
+                    with fileinput.FileInput('supervisord.conf', inplace=True) as file:
+                        for line in file:
+                            if line.strip() == '# [horizon-block]':
+                                line = '''\
 [program:horizon]
 command=php /var/www/html/artisan horizon
 user=www-data
@@ -730,7 +728,8 @@ stopwaitsecs=3600
 autorestart=true
 redirect_stderr=true
 '''
-                                    print(line, end='')
+
+                            print(line, end='')
 
                 git_commands = (
                     ('git', 'add', '.'),
@@ -742,13 +741,11 @@ redirect_stderr=true
 
             else:
                 # remove horizon comment from supervisord.conf
-                with cd('configuration'):
-                    with cd('supervisor'):
-                        with cd('conf.d'):
-                            with fileinput.FileInput('supervisord.conf', inplace=True) as file:
-                                for line in file:
-                                    if line.strip() != '# [horizon-block]':
-                                        print(line, end='')
+                with cd('configuration/supervisor/conf.d'):
+                    with fileinput.FileInput('supervisord.conf', inplace=True) as file:
+                        for line in file:
+                            if line.strip() != '# [horizon-block]':
+                                print(line, end='')
 
                 git_commands = (
                     ('git', 'add', '.'),
@@ -773,12 +770,11 @@ redirect_stderr=true
                 run(('docker-compose', 'down'))
 
                 # change the telescope service provider to allow telescope to run in development environment only
-                with cd('application'):
-                    with cd(configuration['project']['name']):
-                        with fileinput.FileInput('app/Providers/TelescopeServiceProvider.php', inplace=True) as file:
-                            for line in file:
-                                if line.strip() == 'public function register()':
-                                    line = '''\
+                with cd(f"application/{configuration['project']['name']}"):
+                    with fileinput.FileInput('app/Providers/TelescopeServiceProvider.php', inplace=True) as file:
+                        for line in file:
+                            if line.strip() == 'public function register()':
+                                line = '''\
     public function register()
     {
         if ($this->app->isLocal()) {
@@ -795,27 +791,27 @@ redirect_stderr=true
     protected function registerTelescope()
 '''
 
-                                print(line, end='')
+                            print(line, end='')
 
-                        with fileinput.FileInput('app/Console/Kernel.php', inplace=True) as file:
-                            for line in file:
-                                if line.strip() == "// $schedule->command('inspire')->hourly();":
-                                    line = '''\
+                    with fileinput.FileInput('app/Console/Kernel.php', inplace=True) as file:
+                        for line in file:
+                            if line.strip() == "// $schedule->command('inspire')->hourly();":
+                                line = '''\
         $schedule->command('horizon:snapshot')->everyFiveMinutes();
 '''
 
-                                print(line, end='')
+                            print(line, end='')
 
-                        with fileinput.FileInput('composer.json', inplace=True) as file:
-                            for line in file:
-                                if line.strip() == '"dont-discover": []':
-                                    line = '''\
+                    with fileinput.FileInput('composer.json', inplace=True) as file:
+                        for line in file:
+                            if line.strip() == '"dont-discover": []':
+                                line = '''\
             "dont-discover": [
                 "laravel/telescope"
             ]
 '''
 
-                                print(line, end='')
+                            print(line, end='')
 
                 git_commands = (
                     ('git', 'add', '.'),
@@ -825,5 +821,5 @@ redirect_stderr=true
                 for git_command in git_commands:
                     run(git_command, check=True)
 
-        # Project successfully set-up
-        logging.info('Set-up complete. Build something awesome!')
+            # Project successfully set-up
+            logging.info('Set-up complete. Build something awesome!')
