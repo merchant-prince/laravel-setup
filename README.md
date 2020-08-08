@@ -47,7 +47,7 @@ $ pip install -r requirements.txt
 ## Usage
 
 To use the script, you need to run it using the ```venv``` python. This can be done by either running the
-```laraval.py``` script after activating ```venv```, or by using the ```venv``` python binary ```.venv/bin/python```.
+```laravel.py``` script after activating ```venv```, or by using the ```venv``` python binary ```.venv/bin/python```.
 
 ```shell script
 $ ./.venv/bin/activate
