@@ -574,6 +574,13 @@ if __name__ == '__main__':
                     run(git_command, check=True)
 
             # horizon
+            horizon = {
+                'regex': re.compile(r'# \[horizon\]\n(?P<block>.*)\n# \[/horizon\]', re.DOTALL),
+                'git': {
+                    'commit_message': ''
+                }
+            }
+
             if 'horizon' in additional_modules:
                 run(('docker-compose', 'up', '-d'))
 
@@ -589,43 +596,24 @@ if __name__ == '__main__':
 
                 # edit supervisord.conf
                 with cd('configuration/supervisor/conf.d'):
-                    with fileinput.FileInput('supervisord.conf', inplace=True) as file:
-                        for line in file:
-                            if line.strip() == '# [horizon-block]':
-                                line = '''\
-[program:horizon]
-command=php /var/www/html/artisan horizon
-user=www-data
-stopwaitsecs=3600
-autorestart=true
-redirect_stderr=true
-'''
+                    with open('supervisord.conf', 'r+') as file:
+                        file_contents = file.read()
+                        block = horizon['regex'].search(file_contents).group('block').split('\n')
+                        uncommented_block = '\n'.join([re.sub(r'^# ', '', comment) for comment in block])
+                        file.write(horizon['regex'].sub(uncommented_block, file_contents))
 
-                            print(line, end='')
-
-                git_commands = (
-                    ('git', 'add', '.'),
-                    ('git', 'commit', '-m', 'scaffold horizon')
-                )
-
-                for git_command in git_commands:
-                    run(git_command, check=True)
+                horizon['git']['commit_message'] = 'scaffold horizon'
 
             else:
-                # remove horizon comment from supervisord.conf
+                # remove horizon commented block from supervisord.conf
                 with cd('configuration/supervisor/conf.d'):
-                    with fileinput.FileInput('supervisord.conf', inplace=True) as file:
-                        for line in file:
-                            if line.strip() != '# [horizon-block]':
-                                print(line, end='')
+                    with open('supervisord.conf', 'r+') as file:
+                        file.write(horizon['regex'].sub('', file.read()))
 
-                git_commands = (
-                    ('git', 'add', '.'),
-                    ('git', 'commit', '-m', 'remove horizon comment')
-                )
+                horizon['git']['commit_message'] = 'remove horizon comment'
 
-                for git_command in git_commands:
-                    run(git_command, check=True)
+            run(('git', 'add', '.'))
+            run(('git', 'commit', '-m', horizon['git']['commit_message']))
 
             # telescope
             if 'telescope' in additional_modules:
