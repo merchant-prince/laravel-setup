@@ -16,10 +16,9 @@ services:
       - "8025:8025" # mailhog:http
     restart: always
     depends_on:
+      - php
       - adminer
       - mailhog
-      - php
-      - postgresql
     networks:
       - adminer
       - mailhog
@@ -36,10 +35,10 @@ services:
       - ./application/${project_name}:/var/www/html
     restart: always
     networks:
-      - mailhog
       - nginx
       - postgresql
       - redis
+      - mailhog
 
   postgresql:
     image: postgres:latest
@@ -51,8 +50,8 @@ services:
       POSTGRES_PASSWORD: "${postgres_password}"
     restart: always
     networks:
-      - adminer
       - postgresql
+      - adminer
 
   redis:
     image: redis:latest
@@ -78,14 +77,14 @@ services:
 
 
 networks:
-  adminer:
-  mailhog:
   nginx:
   postgresql:
   redis:
+  adminer:
+  mailhog:
 
 
 volumes:
-  adminer:
   postgresql:
   redis:
+  adminer:
