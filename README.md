@@ -1,5 +1,9 @@
 # Laravel Setup
 
+![Project Status](https://img.shields.io/badge/status-active-brightgreen?style=flat-square)
+&nbsp;&nbsp;&nbsp;&nbsp;
+![License](https://img.shields.io/badge/license-GNU%20GPLv3-brightgreen?style=flat-square)
+
 Laravel Setup is a convenient python script used to generate a [Laravel](https://laravel.com) project along with its
 development environment. It uses [Docker](https://www.docker.com) for the project infrastructure.
 
