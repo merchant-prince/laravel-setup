@@ -612,7 +612,6 @@ redirect_stderr=true
                     run(git_command, check=True)
 
             else:
-
                 # remove horizon comment from supervisord.conf
                 with cd('configuration/supervisor/conf.d'):
                     with fileinput.FileInput('supervisord.conf', inplace=True) as file:
