@@ -415,6 +415,16 @@ if __name__ == '__main__':
                     )
                 )
 
+            # README.md
+            with open('README.md', 'w') as file, \
+                    open(f"{template_path('README.md')}") as template:
+                file.write(
+                    Template(template.read()).substitute(
+                        project_name=configuration['project']['name'],
+                        project_domain=configuration['project']['domain']
+                    )
+                )
+
             with cd('configuration'):
                 # nginx
                 with cd('nginx/conf.d'):
@@ -594,10 +604,12 @@ if __name__ == '__main__':
 
                 run(('docker-compose', 'down'))
 
-                # edit supervisord.conf
+                # uncomment horizon block in supervisord.conf
                 with cd('configuration/supervisor/conf.d'):
-                    with open('supervisord.conf', 'r+') as file:
+                    with open('supervisord.conf') as file:
                         file_contents = file.read()
+
+                    with open('supervisord.conf', 'w') as file:
                         block = horizon['regex'].search(file_contents).group('block').split('\n')
                         uncommented_block = '\n'.join([re.sub(r'^# ', '', comment) for comment in block])
                         file.write(horizon['regex'].sub(uncommented_block, file_contents))
@@ -607,8 +619,11 @@ if __name__ == '__main__':
             else:
                 # remove horizon commented block from supervisord.conf
                 with cd('configuration/supervisor/conf.d'):
-                    with open('supervisord.conf', 'r+') as file:
-                        file.write(horizon['regex'].sub('', file.read()))
+                    with open('supervisord.conf') as file:
+                        file_contents = file.read()
+
+                    with open('supervisord.conf', 'w') as file:
+                        file.write(horizon['regex'].sub('', file_contents))
 
                 horizon['git']['commit_message'] = 'remove horizon comment'
 

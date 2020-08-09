@@ -127,6 +127,11 @@ $ python laravel.py setup MyProject --with authentication horizon telescope
 ```
 
 
+## Further Information
+
+For further information on the generated project, see its README.md file (in the project root).
+
+
 ## License
 
 [GNU GPLv3](https://choosealicense.com/licenses/gpl-3.0)
