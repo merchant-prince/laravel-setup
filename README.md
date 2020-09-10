@@ -38,7 +38,7 @@ $ cd laravel-setup
 ```shell script
 $ python -m venv .venv
 
-$ ./.venv/bin/activate
+$ . .venv/bin/activate
 ```
 
 * Use ```pip``` to install the dependencies of the project.
