@@ -42,6 +42,19 @@ def cd(destination: str) -> None:
         os.chdir(cwd)
 
 
+@contextmanager
+def start_stack() -> None:
+    """
+    A context manager to start and stop the project stack using docker-compose.
+    """
+
+    try:
+        run(('docker-compose', 'up', '-d'))
+        yield
+    finally:
+        run(('docker-compose', 'down'))
+
+
 class Validation:
     """
     This class takes care of the validation needs of the application.
@@ -235,19 +248,19 @@ def template_path(path: str = '') -> Path:
 
 class Git:
     @staticmethod
-    def init():
+    def init() -> None:
         run(('git', 'init'))
 
     @staticmethod
-    def add(files):
+    def add(files: str) -> None:
         run(('git', 'add', files))
 
     @staticmethod
-    def commit(message):
+    def commit(message: str) -> None:
         run(('git', 'commit', '-m', message))
 
     @staticmethod
-    def new_branch(branch_name):
+    def new_branch(branch_name: str) -> None:
         run(('git', 'checkout', '-b', branch_name))
 
 
@@ -574,10 +587,8 @@ if __name__ == '__main__':
 
             logging.info('Migrating the database...')
 
-            # @TODO: Extract `up` and `down` to a context
-            run(('docker-compose', 'up', '-d'))
-            run(('./run', 'artisan', 'migrate:fresh'))
-            run(('docker-compose', 'down'))
+            with start_stack():
+                run(('./run', 'artisan', 'migrate:fresh'))
 
             logging.info('The base project has been successfully set-up.')
 
@@ -586,17 +597,14 @@ if __name__ == '__main__':
 
             # authentication
             if 'authentication' in additional_modules:
-                run(('docker-compose', 'up', '-d'))
+                with start_stack():
+                    logging.info('Pulling the authentication module...')
+                    run(('./run', 'composer', 'require', 'laravel/ui'))
 
-                logging.info('Pulling the authentication module...')
-                run(('./run', 'composer', 'require', 'laravel/ui'))
+                    logging.info('Setting up authentication with Vue...')
+                    run(('./run', 'artisan', 'ui', 'vue', '--auth'))
 
-                logging.info('Setting up authentication with Vue...')
-                run(('./run', 'artisan', 'ui', 'vue', '--auth'))
-
-                run(('./run', 'artisan', 'migrate:fresh'))
-
-                run(('docker-compose', 'down'))
+                    run(('./run', 'artisan', 'migrate:fresh'))
 
                 Git.add('.')
                 Git.commit('scaffold authentication')
@@ -605,17 +613,14 @@ if __name__ == '__main__':
             horizon_regex = re.compile(r'# \[horizon\]\n(?P<block>.*)\n# \[/horizon\]', re.DOTALL)
 
             if 'horizon' in additional_modules:
-                run(('docker-compose', 'up', '-d'))
+                with start_stack():
+                    logging.info('Pulling laravel/horizon package...')
+                    run(('./run', 'composer', 'require', 'laravel/horizon'))
 
-                logging.info('Pulling laravel/horizon package...')
-                run(('./run', 'composer', 'require', 'laravel/horizon'))
+                    logging.info('Setting up horizon in the project...')
+                    run(('./run', 'artisan', 'horizon:install'))
 
-                logging.info('Setting up horizon in the project...')
-                run(('./run', 'artisan', 'horizon:install'))
-
-                run(('./run', 'artisan', 'migrate:fresh'))
-
-                run(('docker-compose', 'down'))
+                    run(('./run', 'artisan', 'migrate:fresh'))
 
                 # uncomment horizon block in supervisord.conf
                 with cd('configuration/supervisor/conf.d'):
@@ -644,17 +649,14 @@ if __name__ == '__main__':
 
             # telescope
             if 'telescope' in additional_modules:
-                run(('docker-compose', 'up', '-d'))
+                with start_stack():
+                    logging.info('Pulling laravel/telescope package...')
+                    run(('./run', 'composer', 'require', 'laravel/telescope', '--dev'))
 
-                logging.info('Pulling laravel/telescope package...')
-                run(('./run', 'composer', 'require', 'laravel/telescope', '--dev'))
+                    logging.info('Setting up telescope in the project...')
+                    run(('./run', 'artisan', 'telescope:install'))
 
-                logging.info('Setting up telescope in the project...')
-                run(('./run', 'artisan', 'telescope:install'))
-
-                run(('./run', 'artisan', 'migrate:fresh'))
-
-                run(('docker-compose', 'down'))
+                    run(('./run', 'artisan', 'migrate:fresh'))
 
                 # change the telescope service provider to allow telescope to run in development environment only
                 with cd(f"application/{configuration['project']['name']}"):
@@ -705,34 +707,31 @@ if __name__ == '__main__':
 
             # jetstream
             if arguments.jetstream:
-                run(('docker-compose', 'up', '-d'))
+                with start_stack():
+                    logging.info('Pulling laravel/jetstream package...')
+                    run(('./run', 'composer', 'require', 'laravel/jetstream'))
 
-                logging.info('Pulling laravel/jetstream package...')
-                run(('./run', 'composer', 'require', 'laravel/jetstream'))
+                    jetstream_options = arguments.jetstream.split('.')
 
-                jetstream_options = arguments.jetstream.split('.')
+                    if len(jetstream_options) == 1:
+                        jetstream_options.append(False)
 
-                if len(jetstream_options) == 1:
-                    jetstream_options.append(False)
+                    [stack, teams_support] = jetstream_options
+                    logging.info(f"Setting up jetstream with {stack}{' and teams support' if teams_support else ''}...")
+                    installation_command = ('./run', 'artisan', 'jetstream:install', stack)
 
-                [stack, teams_support] = jetstream_options
-                logging.info(f"Setting up jetstream with {stack}{' and teams support' if teams_support else ''}...")
-                installation_command = ('./run', 'artisan', 'jetstream:install', stack)
+                    if teams_support:
+                        installation_command += ('--teams',)
 
-                if teams_support:
-                    installation_command += ('--teams',)
+                    run(installation_command)
 
-                run(installation_command)
+                    logging.info('Pulling yarn assets...')
+                    run(('./run', 'yarn', 'install'))
 
-                logging.info('Pulling yarn assets...')
-                run(('./run', 'yarn', 'install'))
+                    logging.info('Compiling yarn assets...')
+                    run(('./run', 'yarn', 'run', 'dev'))
 
-                logging.info('Compiling yarn assets...')
-                run(('./run', 'yarn', 'run', 'dev'))
-
-                run(('./run', 'artisan', 'migrate:fresh'))
-
-                run(('docker-compose', 'down'))
+                    run(('./run', 'artisan', 'migrate:fresh'))
 
                 Git.add('.')
                 Git.commit('scaffold jetstream')

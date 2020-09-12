@@ -17,6 +17,14 @@ The following services are provided for every generated project:
 * **[Mailhog](https://github.com/mailhog/MailHog)** (e-mail viewer / debugger)
 
 
+### Assumptions
+
+The package author assumes the following:
+
+* The package is being used on a ```linux``` environment.
+* The python version being used for the project is ```3.8.*```.
+
+
 ## Installation
 
 To install the **Laravel Setup** project, do the following:
