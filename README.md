@@ -19,7 +19,7 @@ The following services are provided for every generated project:
 
 ## Installation
 
-To install **Laravel Script**, do the following:
+To install the **Laravel Setup** project, do the following:
 
 * Clone the project.
 
@@ -47,35 +47,20 @@ $ . .venv/bin/activate
 $ pip install -r requirements.txt
 ```
 
+ * Deactivate ```venv```.
+ 
+ ```shell script
+$ deactivate
+```
+
 
 ## Usage
 
-To use the script, you need to run it using the ```venv``` python. This can be done by either running the
-```laravel.py``` script after activating ```venv```, or by using the ```venv``` python binary ```.venv/bin/python```.
+To use the script, you need to run it using the ```venv``` python.
+In the examples below, we are using the ```venv``` python binary found in ```.venv/bin/python```.
 
 ```shell script
-$ ./.venv/bin/activate
-$ python laravel.py
-
-# OR
-
-$ ./.venv/bin/python laravel.py
-```
-
-The script can be run as follows:
-
-```shell script
-$ python laravel.py setup ProjectName
-
-# OR
-
-$ ./.venv/bin/python laravel.py setup ProjectName
-```
-
-For *help*, pass the ```-h``` or ```--help``` argument when calling the script.
-
-```shell script
-$ python laravel.py --help
+$ .venv/bin/python laravel.py setup [-h] [--domain DOMAIN] [--with [{authentication,horizon,telescope}]] [--jetstream {inertia,inertia.teams,livewire,livewire.teams}] ProjectName
 ```
 
 
@@ -84,7 +69,7 @@ $ python laravel.py --help
 A normal Laravel project can be set-up using the following command:
 
 ```shell script
-$ python laravel.py setup LeProject
+$ .venv/bin/python laravel.py setup LeProject
 ```
 
 The above command will generate a project hosted at [https://application.local](https://application.local).
@@ -93,7 +78,7 @@ The above command will generate a project hosted at [https://application.local](
 #### Note
 Add the following to your ```/etc/hosts``` file so that you can view the project at the aforementioned URI.
 
-```shell script
+```
 # /etc/hosts
 
 127.0.0.1    application.local
@@ -106,8 +91,10 @@ If you would like to host your project at a domain other than [https://applicati
 you can pass the ```--domain``` flag with the domain where you would like the project to be hosted.
 
 ```shell script
-$ python laravel.py setup MyApplication --domain example.local
+$ .venv/bin/python laravel.py setup MyApplication --domain example.local
 ```
+
+You should then add the appropriate entries in your ```/etc/hosts``` file.
 
 
 ### Additional Packages
@@ -123,7 +110,20 @@ The packages that can be installed are:
 This can be done as follows:
 
 ```shell script
-$ python laravel.py setup MyProject --with authentication horizon telescope
+$ .venv/bin/python laravel.py setup MyProject --with authentication horizon telescope
+```
+
+
+#### Jetstream
+
+If you would like to install the ```laravel/jetstream``` package, you can do so using the ```--jetstream``` flag with
+the appropriate *stack* to install, and whether to include *teams* support.
+
+This can be done as follows:
+
+```shell script
+# installing a laravel project with jetstream -- with the inertia stack and teams support
+$ .venv/bin/python laravel.py setup ProjecTatum --jetstream inertia.teams
 ```
 
 

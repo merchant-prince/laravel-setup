@@ -233,6 +233,24 @@ def template_path(path: str = '') -> Path:
     return Path(f'{Path(__file__).parent}/templates/{path}')
 
 
+class Git:
+    @staticmethod
+    def init():
+        run(('git', 'init'))
+
+    @staticmethod
+    def add(files):
+        run(('git', 'add', files))
+
+    @staticmethod
+    def commit(message):
+        run(('git', 'commit', '-m', message))
+
+    @staticmethod
+    def new_branch(branch_name):
+        run(('git', 'checkout', '-b', branch_name))
+
+
 # START #
 if __name__ == '__main__':
 
@@ -279,6 +297,15 @@ if __name__ == '__main__':
         nargs='*',
         choices=('authentication', 'horizon', 'telescope'),
         help='Additional modules to be installed.'
+    )
+    parser.subparsers.setup.add_argument(
+        '--jetstream',
+        choices=tuple(
+            f"{stack}{('.' + teams_support) if teams_support else ''}"
+            for stack in ('inertia', 'livewire')
+            for teams_support in ('', 'teams')
+        ),
+        help='Install laravel/jetstream with the appropriate stack, and activate team-support if needed.'
     )
 
     # parse arguments
@@ -473,6 +500,7 @@ if __name__ == '__main__':
         # Pull Laravel project
         logging.info('Pulling a fresh Laravel project...')
 
+        # @TODO: Add development-version installation support
         with cd(f"{configuration['project']['name']}/application"):
             run(
                 ('docker', 'run',
@@ -494,15 +522,10 @@ if __name__ == '__main__':
         logging.info('Initializing a git repository for the project...')
 
         with cd(configuration['project']['name']):
-            git_commands = (
-                ('git', 'init'),
-                ('git', 'add', '.'),
-                ('git', 'commit', '-m', 'initial commit'),
-                ('git', 'checkout', '-b', 'development')
-            )
-
-            for git_command in git_commands:
-                run(git_command, check=True)
+            Git.init()
+            Git.add('.')
+            Git.commit('initial commit')
+            Git.new_branch('development')
 
         # Set environment variables for the Laravel project
         logging.info('Setting the environment variables for the Laravel project...')
@@ -536,7 +559,7 @@ if __name__ == '__main__':
 
                 # .env
                 with fileinput.input('.env', inplace=True) as file:
-                    env_regex = re.compile(r'^(?P<key>\w+)=(?P<value>[\S]+)?\s*(?P<remaining>#.*)?$')
+                    env_regex = re.compile(r'^(?P<key>\w+)=(?P<value>[\S]+)?\s*$')
 
                     for line in file:
                         line = line.strip()
@@ -545,13 +568,13 @@ if __name__ == '__main__':
                         if matches is not None:
                             matches = matches.groupdict()
                             line = (f"{matches['key']}="
-                                    f"{env[matches['key']] if matches['key'] in env else matches['value']}"
-                                    f"{' ' * 4}{matches['remaining'] or ''}").strip()
+                                    f"{env[matches['key']] if matches['key'] in env else matches['value']}")
 
                         print(line)
 
             logging.info('Migrating the database...')
 
+            # @TODO: Extract `up` and `down` to a context
             run(('docker-compose', 'up', '-d'))
             run(('./run', 'artisan', 'migrate:fresh'))
             run(('docker-compose', 'down'))
@@ -575,21 +598,11 @@ if __name__ == '__main__':
 
                 run(('docker-compose', 'down'))
 
-                git_commands = (
-                    ('git', 'add', '.'),
-                    ('git', 'commit', '-m', 'scaffold authentication')
-                )
-
-                for git_command in git_commands:
-                    run(git_command, check=True)
+                Git.add('.')
+                Git.commit('scaffold authentication')
 
             # horizon
-            horizon = {
-                'regex': re.compile(r'# \[horizon\]\n(?P<block>.*)\n# \[/horizon\]', re.DOTALL),
-                'git': {
-                    'commit_message': ''
-                }
-            }
+            horizon_regex = re.compile(r'# \[horizon\]\n(?P<block>.*)\n# \[/horizon\]', re.DOTALL)
 
             if 'horizon' in additional_modules:
                 run(('docker-compose', 'up', '-d'))
@@ -610,11 +623,12 @@ if __name__ == '__main__':
                         file_contents = file.read()
 
                     with open('supervisord.conf', 'w') as file:
-                        block = horizon['regex'].search(file_contents).group('block').split('\n')
+                        block = horizon_regex.search(file_contents).group('block').split('\n')
                         uncommented_block = '\n'.join([re.sub(r'^# ', '', comment) for comment in block])
-                        file.write(horizon['regex'].sub(uncommented_block, file_contents))
+                        file.write(horizon_regex.sub(uncommented_block, file_contents))
 
-                horizon['git']['commit_message'] = 'scaffold horizon'
+                Git.add('.')
+                Git.commit('scaffold horizon')
 
             else:
                 # remove horizon commented block from supervisord.conf
@@ -623,12 +637,10 @@ if __name__ == '__main__':
                         file_contents = file.read()
 
                     with open('supervisord.conf', 'w') as file:
-                        file.write(horizon['regex'].sub('', file_contents))
+                        file.write(horizon_regex.sub('', file_contents))
 
-                horizon['git']['commit_message'] = 'remove horizon comment'
-
-            run(('git', 'add', '.'))
-            run(('git', 'commit', '-m', horizon['git']['commit_message']))
+                Git.add('.')
+                Git.commit('remove horizon comments in configuration files')
 
             # telescope
             if 'telescope' in additional_modules:
@@ -688,13 +700,42 @@ if __name__ == '__main__':
 
                             print(line, end='')
 
-                git_commands = (
-                    ('git', 'add', '.'),
-                    ('git', 'commit', '-m', 'scaffold telescope')
-                )
+                Git.add('.')
+                Git.commit('scaffold telescope')
 
-                for git_command in git_commands:
-                    run(git_command, check=True)
+            # jetstream
+            if arguments.jetstream:
+                run(('docker-compose', 'up', '-d'))
+
+                logging.info('Pulling laravel/jetstream package...')
+                run(('./run', 'composer', 'require', 'laravel/jetstream'))
+
+                jetstream_options = arguments.jetstream.split('.')
+
+                if len(jetstream_options) == 1:
+                    jetstream_options.append(False)
+
+                [stack, teams_support] = jetstream_options
+                logging.info(f"Setting up jetstream with {stack}{' and teams support' if teams_support else ''}...")
+                installation_command = ('./run', 'artisan', 'jetstream:install', stack)
+
+                if teams_support:
+                    installation_command += ('--teams',)
+
+                run(installation_command)
+
+                logging.info('Pulling yarn assets...')
+                run(('./run', 'yarn', 'install'))
+
+                logging.info('Compiling yarn assets...')
+                run(('./run', 'yarn', 'run', 'dev'))
+
+                run(('./run', 'artisan', 'migrate:fresh'))
+
+                run(('docker-compose', 'down'))
+
+                Git.add('.')
+                Git.commit('scaffold jetstream')
 
             # Project successfully set-up
             logging.info('Set-up complete. Build something awesome!')
