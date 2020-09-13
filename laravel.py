@@ -320,6 +320,11 @@ if __name__ == '__main__':
         ),
         help='Install laravel/jetstream with the appropriate stack, and activate team-support if needed.'
     )
+    parser.subparsers.setup.add_argument(
+        '--development',
+        action='store_true',
+        help='Install the development version of laravel.'
+    )
 
     # parse arguments
     arguments = parser.main.parse_args()
@@ -513,23 +518,26 @@ if __name__ == '__main__':
         # Pull Laravel project
         logging.info('Pulling a fresh Laravel project...')
 
-        # @TODO: Add development-version installation support
         with cd(f"{configuration['project']['name']}/application"):
-            run(
-                ('docker', 'run',
-                 '--rm',
-                 '--interactive',
-                 '--tty',
-                 '--user',
-                 f'{os.geteuid()}:{os.getegid()}',
-                 '--mount', f'type=bind,source={os.getcwd()},target=/application',
-                 '--workdir', '/application',
-                 'composer', 'create-project',
-                 '--prefer-dist',
-                 '--ignore-platform-reqs',
-                 'laravel/laravel', configuration['project']['name']),
-                check=True
+            installation_command = (
+                'docker', 'run',
+                '--rm',
+                '--interactive',
+                '--tty',
+                '--user',
+                f'{os.geteuid()}:{os.getegid()}',
+                '--mount', f'type=bind,source={os.getcwd()},target=/application',
+                '--workdir', '/application',
+                'composer', 'create-project',
+                '--prefer-dist',
+                '--ignore-platform-reqs',
+                'laravel/laravel', configuration['project']['name']
             )
+
+            if arguments.development:
+                installation_command += ('dev-develop',)
+
+            run(installation_command, check=True)
 
         # Initialize git
         logging.info('Initializing a git repository for the project...')

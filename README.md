@@ -68,7 +68,7 @@ To use the script, you need to run it using the ```venv``` python.
 In the examples below, we are using the ```venv``` python binary found in ```.venv/bin/python```.
 
 ```shell script
-$ .venv/bin/python laravel.py setup [-h] [--domain DOMAIN] [--with [{authentication,horizon,telescope}]] [--jetstream {inertia,inertia.teams,livewire,livewire.teams}] ProjectName
+$ .venv/bin/python laravel.py setup [-h] [--domain DOMAIN] [--with [{authentication,horizon,telescope}]] [--jetstream {inertia,inertia.teams,livewire,livewire.teams}] [--development] ProjectName
 ```
 
 
@@ -132,6 +132,16 @@ This can be done as follows:
 ```shell script
 # installing a laravel project with jetstream -- with the inertia stack and teams support
 $ .venv/bin/python laravel.py setup ProjecTatum --jetstream inertia.teams
+```
+
+
+#### Development Version
+
+If you would like to install the **development** version of the laravel framework, you can do so by passing the
+```--development``` flag.
+
+```shell script
+$ .venv/bin/python laravel.py setup ProjecTatum --development
 ```
 
 
