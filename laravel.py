@@ -82,7 +82,7 @@ class Validation:
 
     @staticmethod
     def directory_exists(name: str) -> bool:
-        return Path(f'{Path.cwd()}/{name}').is_dir()
+        return Path(name).is_dir()
 
 
 class Skeleton:
@@ -99,7 +99,7 @@ class Skeleton:
             structure (dict):
                 The directory structure to create in the current directory.
                 This is a dictionary of dictionaries (of dictionaries of dictionaries ...).
-                The empty dictionaries represent directories to be created.
+                The empty dictionaries represent the directories to be created.
 
                 e.g.: { 'one': {
                             'eleven': {},
@@ -112,41 +112,14 @@ class Skeleton:
                     }
         """
 
-        Skeleton._validate(structure)
-        Skeleton._create(structure)
-
-    @staticmethod
-    def _create(structure: Mapping) -> None:
-        """
-        Create directories according to the structure provided.
-
-        Args:
-            structure (Mapping): The directory structure to create in the current directory.
-        """
-
-        for name, inner_structure in structure.items():
-            os.mkdir(name)
-
-            with cd(name):
-                Skeleton._create(inner_structure)
-
-    @staticmethod
-    def _validate(structure: Mapping) -> None:
-        """
-        Validate the directory structure provided.
-
-        Args:
-            structure (Mapping): The directory structure to validate.
-
-        Raises:
-            ValueError: If the given structure is invalid.
-        """
-
         for name, inner_structure in structure.items():
             if isinstance(inner_structure, Mapping):
-                Skeleton._validate(inner_structure)
+                os.mkdir(name)
             else:
                 raise ValueError('The directory structure provided is ill-formed.')
+
+            with cd(name):
+                Skeleton.create(inner_structure)
 
 
 class Ssl:
@@ -241,7 +214,7 @@ class Ssl:
 
 
 def template_path(path: str = '') -> Path:
-    """Get a template's absolute path from a path relative to the templates directory."""
+    """Get a template's absolute path from a path relative to the 'templates' directory."""
 
     return Path(f'{Path(__file__).parent}/templates/{path}')
 
@@ -318,7 +291,7 @@ if __name__ == '__main__':
             for stack in ('inertia', 'livewire')
             for teams_support in ('', 'teams')
         ),
-        help='Install laravel/jetstream with the appropriate stack, and activate team-support if needed.'
+        help='Install the laravel/jetstream package with the appropriate stack, and activate team-support if needed.'
     )
     parser.subparsers.setup.add_argument(
         '--development',
@@ -722,7 +695,7 @@ if __name__ == '__main__':
                     jetstream_options = arguments.jetstream.split('.')
 
                     if len(jetstream_options) == 1:
-                        jetstream_options.append(False)
+                        jetstream_options.append(None)
 
                     [stack, teams_support] = jetstream_options
                     logging.info(f"Setting up jetstream with {stack}{' and teams support' if teams_support else ''}...")
