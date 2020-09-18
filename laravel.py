@@ -611,10 +611,10 @@ if __name__ == '__main__':
                     with open('supervisord.conf', 'w') as file:
                         file.write(
                             horizon_block_regex.sub(
-                                '\n'.join([
-                                    line.strip()
+                                '\n'.join((
+                                    line
                                     for line in horizon_block_regex.search(file_contents).group('block').split('\n')
-                                ]),
+                                )),
                                 file_contents
                             )
                         )
