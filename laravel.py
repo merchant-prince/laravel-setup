@@ -603,7 +603,7 @@ if __name__ == '__main__':
 
                     run(('./run', 'artisan', 'migrate:fresh'))
 
-                # uncomment horizon block in supervisord.conf
+                # add horizon block to supervisord.conf
                 with cd('configuration/supervisor/conf.d'):
                     with open('supervisord.conf') as file:
                         file_contents = file.read()
@@ -623,7 +623,7 @@ if __name__ == '__main__':
                 Git.commit('scaffold horizon')
 
             else:
-                # remove horizon commented block from supervisord.conf
+                # remove horizon block from supervisord.conf
                 with cd('configuration/supervisor/conf.d'):
                     with open('supervisord.conf') as file:
                         file_contents = file.read()
