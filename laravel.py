@@ -591,7 +591,7 @@ if __name__ == '__main__':
                 Git.commit('scaffold authentication')
 
             # horizon
-            horizon_regex = re.compile(r'# \[horizon\]\n(?P<block>.*)\n# \[/horizon\]', re.DOTALL)
+            horizon_block_regex = re.compile(r'<horizon>\n(?P<block>.*)\n</horizon>', re.DOTALL)
 
             if 'horizon' in additional_modules:
                 with start_stack():
@@ -609,9 +609,15 @@ if __name__ == '__main__':
                         file_contents = file.read()
 
                     with open('supervisord.conf', 'w') as file:
-                        block = horizon_regex.search(file_contents).group('block').split('\n')
-                        uncommented_block = '\n'.join([re.sub(r'^# ', '', comment) for comment in block])
-                        file.write(horizon_regex.sub(uncommented_block, file_contents))
+                        file.write(
+                            horizon_block_regex.sub(
+                                '\n'.join([
+                                    line.strip()
+                                    for line in horizon_block_regex.search(file_contents).group('block').split('\n')
+                                ]),
+                                file_contents
+                            )
+                        )
 
                 Git.add('.')
                 Git.commit('scaffold horizon')
@@ -623,7 +629,7 @@ if __name__ == '__main__':
                         file_contents = file.read()
 
                     with open('supervisord.conf', 'w') as file:
-                        file.write(horizon_regex.sub('', file_contents))
+                        file.write(horizon_block_regex.sub('', file_contents))
 
                 Git.add('.')
                 Git.commit('remove horizon comments in configuration files')
