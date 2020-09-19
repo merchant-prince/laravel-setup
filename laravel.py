@@ -281,7 +281,7 @@ if __name__ == '__main__':
     parser.subparsers.setup.add_argument(
         '--with',
         nargs='*',
-        choices=('authentication', 'horizon', 'telescope'),
+        choices=('authentication', 'dusk', 'horizon', 'telescope'),
         help='Additional modules to be installed.'
     )
     parser.subparsers.setup.add_argument(
@@ -405,6 +405,7 @@ if __name__ == '__main__':
                 file.write(
                     Template(template.read()).substitute(
                         project_name=configuration['project']['name'],
+                        project_domain=configuration['project']['domain'],
                         user_id=os.geteuid(),
                         group_id=os.getegid(),
                         postgres_db=configuration['services']['postgres']['environment']['db'],
@@ -590,8 +591,60 @@ if __name__ == '__main__':
                 Git.add('.')
                 Git.commit('scaffold authentication')
 
+            # dusk
+            dusk_block_regex = re.compile(r' *<dusk>\n(?P<block>.*?) *</dusk>\n', re.DOTALL)
+
+            if 'dusk' in additional_modules:
+                with start_stack():
+                    logging.info('Pulling laravel/dusk package...')
+                    run(('./run', 'composer', 'require', 'laravel/dusk', '--dev'))
+
+                    logging.info('Setting up dusk in the project...')
+                    run(('./run', 'artisan', 'dusk:install'))
+
+                    run(('./run', 'artisan', 'migrate:fresh'))
+
+                    # add dusk blocks to docker-compose.yml
+                    with open('docker-compose.yml', 'r+') as file:
+                        file_contents = file.read()
+                        file.seek(0)
+                        file.write(dusk_block_regex.sub(r'\g<block>', file_contents))
+                        file.truncate()
+
+                    with cd(f"application/{configuration['project']['name']}/tests"):
+                        with open('DuskTestCase.php', 'r+') as file:
+                            configuration_replacement_regex = re.compile(
+                                r'(?P<block>\s*return RemoteWebDriver::create\(.*\);\n)'
+                            )
+                            file_contents = file.read()
+                            file.seek(0)
+                            file.write(
+                                configuration_replacement_regex.sub("""\
+        return RemoteWebDriver::create(
+            'http://selenium:4445/wd/hub',
+            DesiredCapabilities::chrome()
+                ->setCapability(ChromeOptions::CAPABILITY, $options)
+                ->setCapability("acceptInsecureCerts")
+        );
+""", file_contents)
+                            )
+
+                Git.add('.')
+                Git.commit('scaffold dusk')
+
+            else:
+                # remove dusk blocks to docker-compose.yml
+                with open('docker-compose.yml', 'r+') as file:
+                    file_contents = file.read()
+                    file.seek(0)
+                    file.write(dusk_block_regex.sub('', file_contents))
+                    file.truncate()
+
+                Git.add('.')
+                Git.commit('remove dusk comments from configuration files')
+
             # horizon
-            horizon_block_regex = re.compile(r'<horizon>\n(?P<block>.*)\n</horizon>', re.DOTALL)
+            horizon_block_regex = re.compile(r' *<horizon>\n(?P<block>.*?) *</horizon>\n', re.DOTALL)
 
             if 'horizon' in additional_modules:
                 with start_stack():
@@ -605,19 +658,11 @@ if __name__ == '__main__':
 
                 # add horizon block to supervisord.conf
                 with cd('configuration/supervisor/conf.d'):
-                    with open('supervisord.conf') as file:
+                    with open('supervisord.conf', 'r+') as file:
                         file_contents = file.read()
-
-                    with open('supervisord.conf', 'w') as file:
-                        file.write(
-                            horizon_block_regex.sub(
-                                '\n'.join((
-                                    line
-                                    for line in horizon_block_regex.search(file_contents).group('block').split('\n')
-                                )),
-                                file_contents
-                            )
-                        )
+                        file.seek(0)
+                        file.write(horizon_block_regex.sub(r'\g<block>', file_contents))
+                        file.truncate()
 
                 Git.add('.')
                 Git.commit('scaffold horizon')
@@ -625,14 +670,14 @@ if __name__ == '__main__':
             else:
                 # remove horizon block from supervisord.conf
                 with cd('configuration/supervisor/conf.d'):
-                    with open('supervisord.conf') as file:
+                    with open('supervisord.conf', 'r+') as file:
                         file_contents = file.read()
-
-                    with open('supervisord.conf', 'w') as file:
+                        file.seek(0)
                         file.write(horizon_block_regex.sub('', file_contents))
+                        file.truncate()
 
                 Git.add('.')
-                Git.commit('remove horizon comments in configuration files')
+                Git.commit('remove horizon comments from configuration files')
 
             # telescope
             if 'telescope' in additional_modules:
