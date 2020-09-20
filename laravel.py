@@ -24,6 +24,16 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 
 
+def template_path(path: str) -> Path:
+    """Get a template's absolute path from a path relative to the 'templates' directory."""
+
+    return Path(f'{Path(__file__).parent}/templates/{path}')
+
+
+def migrate_database() -> None:
+    run(('./run', 'artisan', 'migrate:fresh'), check=True)
+
+
 @contextmanager
 def cd(destination: str) -> None:
     """
@@ -49,10 +59,10 @@ def start_stack() -> None:
     """
 
     try:
-        run(('docker-compose', 'up', '-d'))
+        run(('docker-compose', 'up', '-d'), check=True)
         yield
     finally:
-        run(('docker-compose', 'down'))
+        run(('docker-compose', 'down'), check=True)
 
 
 class Validation:
@@ -213,28 +223,57 @@ class Ssl:
             certificate.write(self._certificate)
 
 
-def template_path(path: str = '') -> Path:
-    """Get a template's absolute path from a path relative to the 'templates' directory."""
+class Block:
+    """
+    This class is responsible for adding or removing tags' contents from files.
+    The tags are in the form `<tag>...</tag>`
 
-    return Path(f'{Path(__file__).parent}/templates/{path}')
+    Args:
+        file (str): The name of the file to manipulate
+        tag (str): The name of the tag to manipulate
+    """
+    def __init__(self, file: str, tag: str):
+        with open(file) as file_:
+            self.contents = file_.read()
+
+        self.tag = tag
+        self.regex = re.compile(
+            r' *'
+            f'<{tag}>'
+            r'\n(?P<block>.*?)'
+            r' *'
+            f'</{tag}>'
+            r'\n',
+            re.DOTALL
+        )
+
+    def add(self) -> str:
+        """ Replace a `<tag>` with its contents """
+
+        return self.regex.sub(r'\g<block>', self.contents)
+
+    def remove(self) -> str:
+        """ Remove a `<tag>` and its contents """
+
+        return self.regex.sub('', self.contents)
 
 
 class Git:
     @staticmethod
     def init() -> None:
-        run(('git', 'init'))
+        run(('git', 'init'), check=True)
 
     @staticmethod
     def add(files: str) -> None:
-        run(('git', 'add', files))
+        run(('git', 'add', files), check=True)
 
     @staticmethod
     def commit(message: str) -> None:
-        run(('git', 'commit', '-m', message))
+        run(('git', 'commit', '-m', message), check=True)
 
     @staticmethod
     def new_branch(branch_name: str) -> None:
-        run(('git', 'checkout', '-b', branch_name))
+        run(('git', 'checkout', '-b', branch_name), check=True)
 
 
 # START #
@@ -301,6 +340,7 @@ if __name__ == '__main__':
 
     # parse arguments
     arguments = parser.main.parse_args()
+    additional_modules = arguments.__getattribute__('with') or []
 
     if arguments.action == 'setup':
 
@@ -317,7 +357,7 @@ if __name__ == '__main__':
             raise RuntimeError(f"The domain: '{arguments.domain}' is invalid.")
 
         # configuration
-        logging.info('Creating configuration values...')
+        logging.info('Initializing configuration values...')
 
         configuration = {
             # project-level configuration values.
@@ -388,16 +428,17 @@ if __name__ == '__main__':
             Ssl(
                 hostname=configuration['project']['domain']
             ).generate(
-                # generate the ssl certificates...
+                # intentionally left blank
             ).write(
                 key_name=configuration['services']['nginx']['ssl']['key'],
                 certificate_name=configuration['services']['nginx']['ssl']['certificate']
             )
 
         # Create configuration files
-        logging.info("Generating the project's configuration files...")
-
         with cd(configuration['project']['name']):
+
+            # Generate
+            logging.info("Generating the project's configuration files...")
 
             # docker-compose.yml
             with open('docker-compose.yml', 'w') as file, \
@@ -489,6 +530,30 @@ if __name__ == '__main__':
                         )
                     )
 
+            # add or remove blocks to configuration files
+            logging.info('Adding & removing blocks to configuration files...')
+
+            # dusk
+            contents = (
+                Block('docker-compose.yml', 'dusk').add()
+                if 'dusk' in additional_modules
+                else Block('docker-compose.yml', 'dusk').remove()
+            )
+
+            with open('docker-compose.yml', 'w') as file:
+                file.write(contents)
+
+            # horizon
+            with cd('configuration/supervisor/conf.d'):
+                contents = (
+                    Block('supervisord.conf', 'horizon').add()
+                    if 'dusk' in additional_modules
+                    else Block('supervisord.conf', 'horizon').remove()
+                )
+
+                with open('supervisord.conf', 'w') as file:
+                    file.write(contents)
+
         # Pull Laravel project
         logging.info('Pulling a fresh Laravel project...')
 
@@ -570,61 +635,56 @@ if __name__ == '__main__':
             logging.info('Migrating the database...')
 
             with start_stack():
-                run(('./run', 'artisan', 'migrate:fresh'))
+                migrate_database()
 
             logging.info('The base project has been successfully set-up.')
 
-            # post-installation tasks
-            additional_modules = arguments.__getattribute__('with') or []
+            #####################
+            # Post Installation #
+            #####################
+
+            # Additional modules installation
 
             # authentication
             if 'authentication' in additional_modules:
                 with start_stack():
                     logging.info('Pulling the authentication module...')
-                    run(('./run', 'composer', 'require', 'laravel/ui'))
+                    run(('./run', 'composer', 'require', 'laravel/ui'), check=True)
 
                     logging.info('Setting up authentication with Vue...')
-                    run(('./run', 'artisan', 'ui', 'vue', '--auth'))
+                    run(('./run', 'artisan', 'ui', 'vue', '--auth'), check=True)
 
-                    run(('./run', 'artisan', 'migrate:fresh'))
+                    migrate_database()
 
                 Git.add('.')
                 Git.commit('scaffold authentication')
 
             # dusk
-            dusk_block_regex = re.compile(r' *<dusk>\n(?P<block>.*?) *</dusk>\n', re.DOTALL)
-
             if 'dusk' in additional_modules:
                 with start_stack():
                     logging.info('Pulling laravel/dusk package...')
-                    run(('./run', 'composer', 'require', 'laravel/dusk', '--dev'))
+                    run(('./run', 'composer', 'require', 'laravel/dusk', '--dev'), check=True)
 
                     logging.info('Setting up dusk in the project...')
-                    run(('./run', 'artisan', 'dusk:install'))
+                    run(('./run', 'artisan', 'dusk:install'), check=True)
 
-                    run(('./run', 'artisan', 'migrate:fresh'))
-
-                    # add dusk blocks to docker-compose.yml
-                    with open('docker-compose.yml', 'r+') as file:
-                        file_contents = file.read()
-                        file.seek(0)
-                        file.write(dusk_block_regex.sub(r'\g<block>', file_contents))
-                        file.truncate()
+                    migrate_database()
 
                     with cd(f"application/{configuration['project']['name']}/tests"):
                         with open('DuskTestCase.php', 'r+') as file:
                             configuration_replacement_regex = re.compile(
-                                r'(?P<block>\s*return RemoteWebDriver::create\(.*\);\n)'
+                                r'(?P<block> *return RemoteWebDriver::create\(.*\);\n)',
+                                re.DOTALL
                             )
                             file_contents = file.read()
                             file.seek(0)
                             file.write(
                                 configuration_replacement_regex.sub("""\
         return RemoteWebDriver::create(
-            'http://selenium:4445/wd/hub',
+            'http://selenium:4444/wd/hub',
             DesiredCapabilities::chrome()
                 ->setCapability(ChromeOptions::CAPABILITY, $options)
-                ->setCapability("acceptInsecureCerts")
+                ->setCapability('acceptInsecureCerts', true)
         );
 """, file_contents)
                             )
@@ -632,63 +692,30 @@ if __name__ == '__main__':
                 Git.add('.')
                 Git.commit('scaffold dusk')
 
-            else:
-                # remove dusk blocks to docker-compose.yml
-                with open('docker-compose.yml', 'r+') as file:
-                    file_contents = file.read()
-                    file.seek(0)
-                    file.write(dusk_block_regex.sub('', file_contents))
-                    file.truncate()
-
-                Git.add('.')
-                Git.commit('remove dusk comments from configuration files')
-
             # horizon
-            horizon_block_regex = re.compile(r' *<horizon>\n(?P<block>.*?) *</horizon>\n', re.DOTALL)
-
             if 'horizon' in additional_modules:
                 with start_stack():
                     logging.info('Pulling laravel/horizon package...')
-                    run(('./run', 'composer', 'require', 'laravel/horizon'))
+                    run(('./run', 'composer', 'require', 'laravel/horizon'), check=True)
 
                     logging.info('Setting up horizon in the project...')
-                    run(('./run', 'artisan', 'horizon:install'))
+                    run(('./run', 'artisan', 'horizon:install'), check=True)
 
-                    run(('./run', 'artisan', 'migrate:fresh'))
-
-                # add horizon block to supervisord.conf
-                with cd('configuration/supervisor/conf.d'):
-                    with open('supervisord.conf', 'r+') as file:
-                        file_contents = file.read()
-                        file.seek(0)
-                        file.write(horizon_block_regex.sub(r'\g<block>', file_contents))
-                        file.truncate()
+                    migrate_database()
 
                 Git.add('.')
                 Git.commit('scaffold horizon')
-
-            else:
-                # remove horizon block from supervisord.conf
-                with cd('configuration/supervisor/conf.d'):
-                    with open('supervisord.conf', 'r+') as file:
-                        file_contents = file.read()
-                        file.seek(0)
-                        file.write(horizon_block_regex.sub('', file_contents))
-                        file.truncate()
-
-                Git.add('.')
-                Git.commit('remove horizon comments from configuration files')
 
             # telescope
             if 'telescope' in additional_modules:
                 with start_stack():
                     logging.info('Pulling laravel/telescope package...')
-                    run(('./run', 'composer', 'require', 'laravel/telescope', '--dev'))
+                    run(('./run', 'composer', 'require', 'laravel/telescope', '--dev'), check=True)
 
                     logging.info('Setting up telescope in the project...')
-                    run(('./run', 'artisan', 'telescope:install'))
+                    run(('./run', 'artisan', 'telescope:install'), check=True)
 
-                    run(('./run', 'artisan', 'migrate:fresh'))
+                    migrate_database()
 
                 # change the telescope service provider to allow telescope to run in development environment only
                 with cd(f"application/{configuration['project']['name']}"):
@@ -741,7 +768,7 @@ if __name__ == '__main__':
             if arguments.jetstream:
                 with start_stack():
                     logging.info('Pulling laravel/jetstream package...')
-                    run(('./run', 'composer', 'require', 'laravel/jetstream'))
+                    run(('./run', 'composer', 'require', 'laravel/jetstream'), check=True)
 
                     jetstream_options = arguments.jetstream.split('.')
 
@@ -755,15 +782,15 @@ if __name__ == '__main__':
                     if teams_support:
                         installation_command += ('--teams',)
 
-                    run(installation_command)
+                    run(installation_command, check=True)
 
                     logging.info('Pulling yarn assets...')
-                    run(('./run', 'yarn', 'install'))
+                    run(('./run', 'yarn', 'install'), check=True)
 
                     logging.info('Compiling yarn assets...')
-                    run(('./run', 'yarn', 'run', 'dev'))
+                    run(('./run', 'yarn', 'run', 'dev'), check=True)
 
-                    run(('./run', 'artisan', 'migrate:fresh'))
+                    migrate_database()
 
                 Git.add('.')
                 Git.commit('scaffold jetstream')
