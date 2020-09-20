@@ -68,7 +68,7 @@ To use the script, you need to run it using the ```venv``` python.
 In the examples below, we are using the ```venv``` python binary found in ```.venv/bin/python```.
 
 ```shell script
-$ .venv/bin/python laravel.py setup [-h] [--domain DOMAIN] [--with [{authentication,horizon,telescope}]] [--jetstream {inertia,inertia.teams,livewire,livewire.teams}] [--development] ProjectName
+$ .venv/bin/python laravel.py setup [-h] [--domain DOMAIN] [--with [{authentication,dusk,horizon,telescope}]] [--jetstream {inertia,inertia.teams,livewire,livewire.teams}] [--development] ProjectName
 ```
 
 
@@ -111,14 +111,15 @@ If you would like to install any (or all) of the following packages, you can spe
 
 The packages that can be installed are:
 
-* [Authentication (UI)](https://laravel.com/docs/7.x/frontend)
-* [Horizon](https://laravel.com/docs/7.x/horizon)
-* [Telescope](https://laravel.com/docs/7.x/telescope)
+* [Authentication (UI)](https://laravel.com/docs/8.x/frontend)
+* [Dusk](https://laravel.com/docs/8.x/dusk)
+* [Horizon](https://laravel.com/docs/8.x/horizon)
+* [Telescope](https://laravel.com/docs/8.x/telescope)
 
 This can be done as follows:
 
 ```shell script
-$ .venv/bin/python laravel.py setup MyProject --with authentication horizon telescope
+$ .venv/bin/python laravel.py setup MyProject --with authentication dusk horizon telescope
 ```
 
 
