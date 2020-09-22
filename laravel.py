@@ -823,19 +823,15 @@ if __name__ == '__main__':
 
                     migrate_database()
 
+                    # yarn
+                    logging.info('Pulling yarn assets...')
+                    run(('./run', 'yarn', 'install'), check=True)
+
+                    logging.info('Compiling yarn assets...')
+                    run(('./run', 'yarn', 'run', 'dev'), check=True)
+
                 Git.add('.')
                 Git.commit('scaffold jetstream')
-
-            with start_stack():
-                # yarn
-                logging.info('Pulling yarn assets...')
-                run(('./run', 'yarn', 'install'), check=True)
-
-                logging.info('Compiling yarn assets...')
-                run(('./run', 'yarn', 'run', 'dev'), check=True)
-
-            Git.add('.')
-            Git.commit('compile css & js')
 
             # Project successfully set-up
             logging.info('Set-up complete. Build something awesome!')
