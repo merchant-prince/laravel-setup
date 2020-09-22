@@ -259,15 +259,19 @@ class Block:
             re.DOTALL
         )
 
-    def add(self) -> str:
+    def add(self):
         """ Replace a `<tag>` with its contents """
+        self.contents = self.regex.sub(r'\g<block>', self.contents)
+        return self
 
-        return self.regex.sub(r'\g<block>', self.contents)
-
-    def remove(self) -> str:
+    def remove(self):
         """ Remove a `<tag>` and its contents """
+        self.contents = self.regex.sub('', self.contents)
+        return self
 
-        return self.regex.sub('', self.contents)
+    def __str__(self) -> str:
+        """ Get the block's contents when casting to string """
+        return self.contents
 
 
 class Git:
@@ -548,7 +552,7 @@ if __name__ == '__main__':
             logging.info('Adding & removing blocks to configuration files...')
 
             # dusk
-            contents = (
+            contents = str(
                 Block('docker-compose.yml', 'dusk').add()
                 if 'dusk' in additional_modules
                 else Block('docker-compose.yml', 'dusk').remove()
@@ -559,9 +563,9 @@ if __name__ == '__main__':
 
             # horizon
             with cd('configuration/supervisor/conf.d'):
-                contents = (
+                contents = str(
                     Block('supervisord.conf', 'horizon').add()
-                    if 'dusk' in additional_modules
+                    if 'horizon' in additional_modules
                     else Block('supervisord.conf', 'horizon').remove()
                 )
 
