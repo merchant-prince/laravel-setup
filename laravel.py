@@ -24,6 +24,10 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 
 
+#############
+# FUNCTIONS #
+#############
+
 def template_path(path: str) -> Path:
     """Get a template's absolute path from a path relative to the 'templates' directory."""
 
@@ -33,6 +37,10 @@ def template_path(path: str) -> Path:
 def migrate_database() -> None:
     run(('./run', 'artisan', 'migrate:fresh'), check=True)
 
+
+####################
+# CONTEXT MANAGERS #
+####################
 
 @contextmanager
 def cd(destination: str) -> None:
@@ -64,6 +72,10 @@ def start_stack() -> None:
     finally:
         run(('docker-compose', 'down'), check=True)
 
+
+###########
+# CLASSES #
+###########
 
 class Validation:
     """
@@ -276,7 +288,10 @@ class Git:
         run(('git', 'checkout', '-b', branch_name), check=True)
 
 
+#########
 # START #
+#########
+
 if __name__ == '__main__':
 
     logging.basicConfig(
@@ -321,7 +336,7 @@ if __name__ == '__main__':
         '--with',
         nargs='*',
         choices=('authentication', 'dusk', 'horizon', 'telescope'),
-        help='Additional modules to be installed.'
+        help='Additional modules to install.'
     )
     parser.subparsers.setup.add_argument(
         '--jetstream',
@@ -338,7 +353,6 @@ if __name__ == '__main__':
         help='Install the development version of laravel.'
     )
 
-    # parse arguments
     arguments = parser.main.parse_args()
     additional_modules = arguments.__getattribute__('with') or []
 
@@ -360,7 +374,6 @@ if __name__ == '__main__':
         logging.info('Initializing configuration values...')
 
         configuration = {
-            # project-level configuration values.
             'project': {
                 'name': arguments.project_name,
                 'domain': arguments.domain
@@ -510,6 +523,7 @@ if __name__ == '__main__':
 
                 # supervisor
                 with cd('supervisor/conf.d'):
+                    # supervisord.conf
                     with open('supervisord.conf', 'w') as file, \
                             open(
                                 f"{template_path('configuration/supervisor/conf.d/supervisord.conf')}"
@@ -619,7 +633,7 @@ if __name__ == '__main__':
 
                 # .env
                 with fileinput.input('.env', inplace=True) as file:
-                    env_regex = re.compile(r'^(?P<key>\w+)=(?P<value>[\S]+)?\s*$')
+                    env_regex = re.compile(r'^(?P<key>\w+)=(?P<value>.*?)?\s*$')
 
                     for line in file:
                         line = line.strip()
@@ -639,11 +653,9 @@ if __name__ == '__main__':
 
             logging.info('The base project has been successfully set-up.')
 
-            #####################
-            # Post Installation #
-            #####################
-
-            # Additional modules installation
+            ########################
+            # MODULES INSTALLATION #
+            ########################
 
             # authentication
             if 'authentication' in additional_modules:
@@ -672,22 +684,28 @@ if __name__ == '__main__':
 
                     with cd(f"application/{configuration['project']['name']}/tests"):
                         with open('DuskTestCase.php', 'r+') as file:
-                            configuration_replacement_regex = re.compile(
+                            regex = re.compile(
                                 r'(?P<block> *return RemoteWebDriver::create\(.*\);\n)',
                                 re.DOTALL
                             )
                             file_contents = file.read()
                             file.seek(0)
+                            file_contents = file_contents.replace(
+                                'static::startChromeDriver();',
+                                '// static::startChromeDriver();',
+                                1
+                            )
                             file.write(
-                                configuration_replacement_regex.sub("""\
+                                regex.sub('''\
         return RemoteWebDriver::create(
             'http://selenium:4444/wd/hub',
             DesiredCapabilities::chrome()
                 ->setCapability(ChromeOptions::CAPABILITY, $options)
                 ->setCapability('acceptInsecureCerts', true)
         );
-""", file_contents)
+''', file_contents)
                             )
+                            file.truncate()
 
                 Git.add('.')
                 Git.commit('scaffold dusk')
@@ -703,6 +721,22 @@ if __name__ == '__main__':
 
                     migrate_database()
 
+                # Console Kernel
+                with cd(f"application/{configuration['project']['name']}/app/Console"):
+                    with open('Kernel.php', 'r+') as file:
+                        file_contents = file.read()
+                        file.seek(0)
+                        regex = re.compile(
+                            r' *' + re.escape("// $schedule->command('inspire')->hourly();")
+                        )
+                        new_file_contents = regex.sub(
+                            "        $schedule->command('horizon:snapshot')->everyFiveMinutes();",
+                            file_contents
+                        )
+
+                        file.write(new_file_contents)
+                        file.truncate()
+
                 Git.add('.')
                 Git.commit('scaffold horizon')
 
@@ -717,16 +751,18 @@ if __name__ == '__main__':
 
                     migrate_database()
 
-                # change the telescope service provider to allow telescope to run in development environment only
                 with cd(f"application/{configuration['project']['name']}"):
-                    with fileinput.FileInput('app/Providers/TelescopeServiceProvider.php', inplace=True) as file:
-                        for line in file:
-                            if line.strip() == 'public function register()':
-                                line = '''\
+                    # TelescopeServiceProvider.php
+                    with cd('app/Providers'):
+                        with open('TelescopeServiceProvider.php', 'r+') as file:
+                            file_contents = file.read()
+                            file.seek(0)
+                            regex = re.compile(r' *' + re.escape('public function register()'))
+                            new_file_contents = regex.sub('''\
     public function register()
     {
         if ($this->app->isLocal()) {
-            $this->app->register(\\Laravel\\Telescope\\TelescopeServiceProvider::class);
+            $this->app->register(\\\\Laravel\\\\Telescope\\\\TelescopeServiceProvider::class);
             $this->registerTelescope();
         }
     }
@@ -736,30 +772,27 @@ if __name__ == '__main__':
      *
      * @return void
      */
-    protected function registerTelescope()
-'''
+    protected function registerTelescope()\
+''', file_contents)
 
-                            print(line, end='')
+                            file.write(new_file_contents)
+                            file.truncate()
 
-                    with fileinput.FileInput('app/Console/Kernel.php', inplace=True) as file:
-                        for line in file:
-                            if line.strip() == "// $schedule->command('inspire')->hourly();":
-                                line = '''\
-        $schedule->command('horizon:snapshot')->everyFiveMinutes();
-'''
-
-                            print(line, end='')
-
-                    with fileinput.FileInput('composer.json', inplace=True) as file:
-                        for line in file:
-                            if line.strip() == '"dont-discover": []':
-                                line = '''\
+                    # composer.json
+                    with open('composer.json', 'r+') as file:
+                        file_contents = file.read()
+                        file.seek(0)
+                        regex = re.compile(
+                            r' *' + re.escape('"dont-discover": []') + r'\n'
+                        )
+                        new_file_contents = regex.sub('''\
             "dont-discover": [
                 "laravel/telescope"
             ]
-'''
+''', file_contents)
 
-                            print(line, end='')
+                        file.write(new_file_contents)
+                        file.truncate()
 
                 Git.add('.')
                 Git.commit('scaffold telescope')
@@ -784,16 +817,21 @@ if __name__ == '__main__':
 
                     run(installation_command, check=True)
 
-                    logging.info('Pulling yarn assets...')
-                    run(('./run', 'yarn', 'install'), check=True)
-
-                    logging.info('Compiling yarn assets...')
-                    run(('./run', 'yarn', 'run', 'dev'), check=True)
-
                     migrate_database()
 
                 Git.add('.')
                 Git.commit('scaffold jetstream')
+
+            with start_stack():
+                # yarn
+                logging.info('Pulling yarn assets...')
+                run(('./run', 'yarn', 'install'), check=True)
+
+                logging.info('Compiling yarn assets...')
+                run(('./run', 'yarn', 'run', 'dev'), check=True)
+
+            Git.add('.')
+            Git.commit('compile css & js')
 
             # Project successfully set-up
             logging.info('Set-up complete. Build something awesome!')
