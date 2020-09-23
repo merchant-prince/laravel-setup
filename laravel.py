@@ -599,7 +599,7 @@ if __name__ == '__main__':
         # Initialize git
         logging.info('Initializing a git repository for the project...')
 
-        with cd(configuration['project']['name']):
+        with cd(f"{configuration['project']['name']}/application/{configuration['project']['name']}"):
             Git.init()
             Git.add('.')
             Git.commit('initial commit')
@@ -672,8 +672,9 @@ if __name__ == '__main__':
 
                     migrate_database()
 
-                Git.add('.')
-                Git.commit('scaffold authentication')
+                with cd(f"application/{configuration['project']['name']}"):
+                    Git.add('.')
+                    Git.commit('scaffold authentication')
 
             # dusk
             if 'dusk' in additional_modules:
@@ -711,8 +712,9 @@ if __name__ == '__main__':
                             )
                             file.truncate()
 
-                Git.add('.')
-                Git.commit('scaffold dusk')
+                with cd(f"application/{configuration['project']['name']}"):
+                    Git.add('.')
+                    Git.commit('scaffold dusk')
 
             # horizon
             if 'horizon' in additional_modules:
@@ -741,8 +743,9 @@ if __name__ == '__main__':
                         file.write(new_file_contents)
                         file.truncate()
 
-                Git.add('.')
-                Git.commit('scaffold horizon')
+                with cd(f"application/{configuration['project']['name']}"):
+                    Git.add('.')
+                    Git.commit('scaffold horizon')
 
             # telescope
             if 'telescope' in additional_modules:
@@ -798,8 +801,9 @@ if __name__ == '__main__':
                         file.write(new_file_contents)
                         file.truncate()
 
-                Git.add('.')
-                Git.commit('scaffold telescope')
+                with cd(f"application/{configuration['project']['name']}"):
+                    Git.add('.')
+                    Git.commit('scaffold telescope')
 
             # jetstream
             if arguments.jetstream:
@@ -830,8 +834,9 @@ if __name__ == '__main__':
                     logging.info('Compiling yarn assets...')
                     run(('./run', 'yarn', 'run', 'dev'), check=True)
 
-                Git.add('.')
-                Git.commit('scaffold jetstream')
+                with cd(f"application/{configuration['project']['name']}"):
+                    Git.add('.')
+                    Git.commit('scaffold jetstream')
 
             # Project successfully set-up
             logging.info('Set-up complete. Build something awesome!')
