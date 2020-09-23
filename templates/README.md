@@ -6,33 +6,33 @@
 The architecture of the project is as follows:
 
 ```
-${project_name}    <--- Root project directory
+${project_name}                         <--- Root project directory
 │
-├── application    <--- Application directory
-│   └── ${project_name}    <--- Laravel project
+├── application                         <--- Application directory
+│   └── ${project_name}                 <--- Laravel project
 │
-├── configuration                                 <--- Configuration directory for all the available services
+├── configuration                       <--- Configuration directory for all the available services
 │   │
-│   ├── nginx                               <--- Nginx configuration directory
-│   │   ├── conf.d                    <--- Main nginx configuration
-│   │   │   ├── default.conf    <--- Application configuration
-│   │   │   └── utils.conf      <--- Other services (utilities) configuration
+│   ├── nginx                           <--- Nginx configuration directory
+│   │   ├── conf.d                      <--- Main nginx configuration
+│   │   │   ├── default.conf            <--- Application configuration
+│   │   │   └── utils.conf              <--- Other services (utilities) configuration
 │   │   │
-│   │   └── ssl                       <--- Ssl configuration
-│   │       ├── certificate.pem       <--- Ssl certificate
-│   │       └── key.pem               <--- Ssl key
+│   │   └── ssl                         <--- Ssl configuration
+│   │       ├── certificate.pem         <--- Ssl certificate
+│   │       └── key.pem                 <--- Ssl key
 │   │
-│   └── supervisor                          <--- Supervisor configuration
-│       └── conf.d                          <--- Main supervisor configuration
-│           └── supervisord.conf            <--- Supervisord configuration
+│   └── supervisor                      <--- Supervisor configuration
+│       └── conf.d                      <--- Main supervisor configuration
+│           └── supervisord.conf        <--- Supervisord configuration
 │
-├── docker-compose                  <--- Docker-Compose configuration
-│   └── services              <--- Docker-Compose services
-│       └── php               <--- PHP service configuration
-│           └── Dockerfile    <--- PHP dockerfile
+├── docker-compose                      <--- Docker-Compose configuration
+│   └── services                        <--- Docker-Compose services
+│       └── php                         <--- PHP service configuration
+│           └── Dockerfile              <--- PHP dockerfile
 │
-├── docker-compose.yml    <--- Main docker-compose configuration
-└── run                   <--- Script to run Artisan, Yarn, or Composer
+├── docker-compose.yml                  <--- Main docker-compose configuration
+└── run                                 <--- Script to run Artisan, Yarn, or Composer
 ```
 
 
