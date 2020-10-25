@@ -71,7 +71,7 @@ if __name__ == "__main__":
     arguments = parser.main.parse_args()
 
     if arguments.action == 'artisan':
-        run(('docker-compose', 'exec', '--user', 'www-data', 'php', 'php', 'artisan', *arguments.command), check=True)
+        run(('docker-compose', 'exec', '--user', 'www-data', 'php', 'php', 'artisan', *arguments.command))
 
     elif arguments.action == 'composer':
         run(('docker-compose', 'exec', '--user', 'www-data', 'php', 'composer', *arguments.command), check=True)
