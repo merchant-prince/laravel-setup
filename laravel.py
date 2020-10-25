@@ -29,12 +29,14 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 #############
 
 def template_path(path: str) -> Path:
-    """Get a template's absolute path from a path relative to the 'templates' directory."""
+    """ Get a template's absolute path from a path relative to the 'templates' directory. """
 
     return Path(f'{Path(__file__).parent}/templates/{path}')
 
 
 def migrate_database() -> None:
+    """ Migrate the application's database. """
+
     run(('./run', 'artisan', 'migrate:fresh'), check=True)
 
 
@@ -63,7 +65,7 @@ def cd(destination: str) -> None:
 @contextmanager
 def start_stack() -> None:
     """
-    A context manager to start and stop the project stack using docker-compose.
+    A context manager to start and stop the application's stack using docker-compose.
     """
 
     try:
@@ -123,15 +125,17 @@ class Skeleton:
                 This is a dictionary of dictionaries (of dictionaries of dictionaries ...).
                 The empty dictionaries represent the directories to be created.
 
-                e.g.: { 'one': {
-                            'eleven': {},
-                            'twelve': {
-                                'inner-directory': {
-                                    ...
-                                }
+                e.g.:
+                {
+                    'one': {
+                        'eleven': {},
+                        'twelve': {
+                            'inner-directory': {
+                                ...
                             }
                         }
                     }
+                }
         """
 
         for name, inner_structure in structure.items():
@@ -241,12 +245,13 @@ class Block:
     The tags are in the form `<tag>...</tag>`
 
     Args:
-        file (str): The name of the file to manipulate
+        filename (str): The name of the file to manipulate
         tag (str): The name of the tag to manipulate
     """
-    def __init__(self, file: str, tag: str):
-        with open(file) as file_:
-            self.contents = file_.read()
+
+    def __init__(self, filename: str, tag: str):
+        with open(filename) as file:
+            self.contents = file.read()
 
         self.tag = tag
         self.regex = re.compile(
@@ -385,8 +390,8 @@ if __name__ == '__main__':
             'services': {
                 'nginx': {
                     'ssl': {
-                        'key': 'key.pem',
-                        'certificate': 'certificate.pem'
+                        'certificate': 'cert.pem',
+                        'key': 'key.pem'
                     }
                 },
                 'postgres': {
@@ -732,10 +737,10 @@ if __name__ == '__main__':
                     with open('Kernel.php', 'r+') as file:
                         file_contents = file.read()
                         file.seek(0)
-                        regex = re.compile(
+                        command_regex = re.compile(
                             r' *' + re.escape("// $schedule->command('inspire')->hourly();")
                         )
-                        new_file_contents = regex.sub(
+                        new_file_contents = command_regex.sub(
                             "        $schedule->command('horizon:snapshot')->everyFiveMinutes();",
                             file_contents
                         )
