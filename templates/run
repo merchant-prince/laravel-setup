@@ -8,7 +8,7 @@ from subprocess import run
 from types import SimpleNamespace
 
 if __name__ == "__main__":
-    # argument parsing
+
     parser = namedtuple('Parser', ('main', 'subparser', 'subparsers'))(
         main := ArgumentParser(
             prog='run',
@@ -74,7 +74,7 @@ if __name__ == "__main__":
         run(('docker-compose', 'exec', '--user', 'www-data', 'php', 'php', 'artisan', *arguments.command))
 
     elif arguments.action == 'composer':
-        run(('docker-compose', 'exec', '--user', 'www-data', 'php', 'composer', *arguments.command), check=True)
+        run(('docker-compose', 'exec', '--user', 'www-data', 'php', 'composer', *arguments.command))
 
     elif arguments.action == 'yarn':
         run(('docker', 'run',
@@ -87,4 +87,4 @@ if __name__ == "__main__":
              'type=bind,'
              f"source={Path(f'{Path(__file__).parent.absolute()}/application/${project_name}')},"
              'destination=/application',
-             'node:latest', 'yarn', *arguments.command), check=True)
+             'node:latest', 'yarn', *arguments.command))
