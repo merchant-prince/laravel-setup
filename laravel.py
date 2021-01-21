@@ -19,8 +19,7 @@ from typing import Optional
 
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 
 
@@ -88,21 +87,17 @@ class Validation:
 
     @staticmethod
     def is_pascal_case(string: str) -> bool:
-        pascal_case_regex = re.compile(r'^[A-Z][a-z]+(?:[A-Z][a-z]+)*$')
-
-        return pascal_case_regex.match(string) is not None
+        return re.compile(r'^[A-Z][a-z]+(?:[A-Z][a-z]+)*$').match(string) is not None
 
     @staticmethod
     def domain_is_valid(domain: str) -> bool:
-        domain_regex = re.compile(
+        return re.compile(
             r'^'
             r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?))'  # domain
             r'(?:/?|[/?]\S+)'  # path
             r'$',
             re.IGNORECASE
-        )
-
-        return domain_regex.match(domain) is not None
+        ).match(domain) is not None
 
     @staticmethod
     def directory_exists(name: str) -> bool:
@@ -230,7 +225,13 @@ class Ssl:
         Args:
             key_name (str): The filename of the key.
             certificate_name (str): The filename of the certificate.
+
+        Raises:
+            RuntimeError: If the _key or _certificate properties are None.
         """
+
+        if self._key is None or self._certificate is None:
+            raise RuntimeError('The key or the certificate is empty.')
 
         with open(key_name, 'wb') as key:
             key.write(self._key)
@@ -328,7 +329,7 @@ if __name__ == '__main__':
     parser.subparsers.setup = parser.subparser.add_parser(
         'setup',
         description='Setup a new Laravel project.',
-        epilog='Do it!',
+        epilog='Setup!',
         add_help=True,
         allow_abbrev=False
     )
@@ -358,7 +359,6 @@ if __name__ == '__main__':
 
     if arguments.action == 'setup':
 
-        # validation
         logging.info('Validating provided values...')
 
         if not Validation.is_pascal_case(arguments.project_name):
@@ -370,7 +370,6 @@ if __name__ == '__main__':
         if not Validation.domain_is_valid(arguments.domain):
             raise RuntimeError(f"The domain: '{arguments.domain}' is invalid.")
 
-        # configuration
         logging.info('Initializing configuration values...')
 
         configuration = {
@@ -395,7 +394,6 @@ if __name__ == '__main__':
             }
         }
 
-        # directory structure
         logging.info('Creating directory structure...')
 
         Skeleton.create({
@@ -434,7 +432,6 @@ if __name__ == '__main__':
             }
         })
 
-        # Generate ssl certificates
         logging.info('Generating SSL certificates...')
 
         with cd(f"{configuration['project']['name']}/configuration/nginx/ssl"):
@@ -447,13 +444,10 @@ if __name__ == '__main__':
                 certificate_name=configuration['services']['nginx']['ssl']['certificate']
             )
 
-        # Create configuration files
+        logging.info("Generating the project's configuration files...")
+
         with cd(configuration['project']['name']):
 
-            # Generate
-            logging.info("Generating the project's configuration files...")
-
-            # docker-compose.yml
             with open('docker-compose.yml', 'w') as file, \
                     open(f"{template_path('docker-compose.yml')}") as template:
                 file.write(
@@ -468,7 +462,6 @@ if __name__ == '__main__':
                     )
                 )
 
-            # run
             with open('run', 'w') as file, \
                     open(f"{template_path('run')}") as template:
                 file.write(
@@ -479,7 +472,6 @@ if __name__ == '__main__':
 
             Path('run').chmod(0o755)
 
-            # .gitignore
             with open('.gitignore', 'w') as file, \
                     open(f"{template_path('.gitignore')}") as template:
                 file.write(
@@ -488,7 +480,6 @@ if __name__ == '__main__':
                     )
                 )
 
-            # README.md
             with open('README.md', 'w') as file, \
                     open(f"{template_path('README.md')}") as template:
                 file.write(
@@ -499,9 +490,7 @@ if __name__ == '__main__':
                 )
 
             with cd('configuration'):
-                # nginx
                 with cd('nginx/conf.d'):
-                    # default.conf
                     with open('default.conf', 'w') as file, \
                             open(f"{template_path('configuration/nginx/conf.d/default.conf')}") as template:
                         file.write(
@@ -512,7 +501,6 @@ if __name__ == '__main__':
                             )
                         )
 
-                    # utils.conf
                     with open('utils.conf', 'w') as file, \
                             open(f"{template_path('configuration/nginx/conf.d/utils.conf')}") as template:
                         file.write(
@@ -521,9 +509,7 @@ if __name__ == '__main__':
                             )
                         )
 
-                # supervisor
                 with cd('supervisor/conf.d'):
-                    # supervisord.conf
                     with open('supervisord.conf', 'w') as file, \
                             open(
                                 f"{template_path('configuration/supervisor/conf.d/supervisord.conf')}"
@@ -535,7 +521,6 @@ if __name__ == '__main__':
                         )
 
             with cd('docker-compose/services/php'):
-                # Dockerfile (php)
                 with open('Dockerfile', 'w') as file, \
                         open(f"{template_path('docker-compose/services/php/Dockerfile')}") as template:
                     file.write(
@@ -544,10 +529,8 @@ if __name__ == '__main__':
                         )
                     )
 
-            # add or remove blocks to configuration files
             logging.info('Adding & removing blocks to configuration files...')
 
-            # horizon
             with cd('configuration/supervisor/conf.d'):
                 contents = str(
                     Block('supervisord.conf', 'horizon').add()
@@ -558,7 +541,6 @@ if __name__ == '__main__':
                 with open('supervisord.conf', 'w') as file:
                     file.write(contents)
 
-        # Pull Laravel project
         logging.info('Pulling a fresh Laravel project...')
 
         with cd(f"{configuration['project']['name']}/application"):
@@ -582,7 +564,6 @@ if __name__ == '__main__':
 
             run(installation_command, check=True)
 
-        # Initialize git
         logging.info('Initializing a git repository for the project...')
 
         with cd(f"{configuration['project']['name']}/application/{configuration['project']['name']}"):
@@ -591,7 +572,6 @@ if __name__ == '__main__':
             Git.commit('initial commit')
             Git.new_branch('development')
 
-        # Set environment variables for the Laravel project
         logging.info('Setting the environment variables for the Laravel project...')
 
         with cd(configuration['project']['name']):
@@ -621,20 +601,23 @@ if __name__ == '__main__':
                     'MAIL_FROM_ADDRESS': f"{(configuration['project']['name']).lower()}@{configuration['project']['domain']}"
                 }
 
-                # .env
-                with fileinput.input('.env', inplace=True) as file:
-                    env_regex = re.compile(r'^(?P<key>\w+)=(?P<value>.*?)?\s*$')
+                for env_file in ['.env', '.env.example']:
+                    with fileinput.input(env_file, inplace=True) as file:
+                        env_regex = re.compile(r'^(?P<key>\w+)=(?P<value>.*?)?\s*$')
 
-                    for line in file:
-                        line = line.strip()
-                        matches = env_regex.match(line)
+                        for line in file:
+                            line = line.strip()
+                            matches = env_regex.match(line)
 
-                        if matches is not None:
-                            matches = matches.groupdict()
-                            line = (f"{matches['key']}="
-                                    f"{env[matches['key']] if matches['key'] in env else matches['value']}")
+                            if matches is not None:
+                                matches = matches.groupdict()
+                                line = (f"{matches['key']}="
+                                        f"{env[matches['key']] if matches['key'] in env else matches['value']}")
 
-                        print(line)
+                            print(line)
+
+                Git.add('.')
+                Git.commit('set proper environment variables for the project.')
 
             logging.info('Migrating the database...')
 
@@ -647,7 +630,6 @@ if __name__ == '__main__':
             # MODULES INSTALLATION #
             ########################
 
-            # horizon
             if 'horizon' in additional_modules:
                 with start_stack():
                     logging.info('Pulling laravel/horizon package...')
@@ -658,11 +640,9 @@ if __name__ == '__main__':
 
                     migrate_database()
 
-                # Console Kernel
                 with cd(f"application/{configuration['project']['name']}/app/Console"):
                     with open('Kernel.php', 'r+') as file:
                         file_contents = file.read()
-                        file.seek(0)
                         command_regex = re.compile(
                             r' *' + re.escape("// $schedule->command('inspire')->hourly();")
                         )
@@ -671,6 +651,7 @@ if __name__ == '__main__':
                             file_contents
                         )
 
+                        file.seek(0)
                         file.write(new_file_contents)
                         file.truncate()
 
@@ -678,7 +659,6 @@ if __name__ == '__main__':
                     Git.add('.')
                     Git.commit('scaffold horizon')
 
-            # telescope
             if 'telescope' in additional_modules:
                 with start_stack():
                     logging.info('Pulling laravel/telescope package...')
@@ -690,7 +670,6 @@ if __name__ == '__main__':
                     migrate_database()
 
                 with cd(f"application/{configuration['project']['name']}"):
-                    # TelescopeServiceProvider.php
                     with cd('app/Providers'):
                         with open('TelescopeServiceProvider.php', 'r+') as file:
                             file_contents = file.read()
@@ -716,7 +695,6 @@ if __name__ == '__main__':
                             file.write(new_file_contents)
                             file.truncate()
 
-                    # composer.json
                     with open('composer.json', 'r+') as file:
                         file_contents = file.read()
                         file.seek(0)
@@ -736,5 +714,4 @@ if __name__ == '__main__':
                     Git.add('.')
                     Git.commit('scaffold telescope')
 
-            # Project successfully set-up
             logging.info('Set-up complete. Build something awesome!')
