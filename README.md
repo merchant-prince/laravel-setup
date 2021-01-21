@@ -111,15 +111,13 @@ If you would like to install any (or all) of the following packages, you can spe
 
 The packages that can be installed are:
 
-* [Authentication (UI)](https://laravel.com/docs/8.x/frontend)
-* [Dusk](https://laravel.com/docs/8.x/dusk)
 * [Horizon](https://laravel.com/docs/8.x/horizon)
 * [Telescope](https://laravel.com/docs/8.x/telescope)
 
 This can be done as follows:
 
 ```shell script
-$ .venv/bin/python laravel.py setup MyProject --with authentication dusk horizon telescope
+$ .venv/bin/python laravel.py setup MyProject --with horizon telescope
 ```
 
 

@@ -344,7 +344,7 @@ if __name__ == '__main__':
     parser.subparsers.setup.add_argument(
         '--with',
         nargs='*',
-        choices=('authentication', 'dusk', 'horizon', 'telescope'),
+        choices=('horizon', 'telescope'),
         help='Additional modules to install.'
     )
     parser.subparsers.setup.add_argument(
@@ -547,16 +547,6 @@ if __name__ == '__main__':
             # add or remove blocks to configuration files
             logging.info('Adding & removing blocks to configuration files...')
 
-            # dusk
-            contents = str(
-                Block('docker-compose.yml', 'dusk').add()
-                if 'dusk' in additional_modules
-                else Block('docker-compose.yml', 'dusk').remove()
-            )
-
-            with open('docker-compose.yml', 'w') as file:
-                file.write(contents)
-
             # horizon
             with cd('configuration/supervisor/conf.d'):
                 contents = str(
@@ -656,61 +646,6 @@ if __name__ == '__main__':
             ########################
             # MODULES INSTALLATION #
             ########################
-
-            # authentication
-            if 'authentication' in additional_modules:
-                with start_stack():
-                    logging.info('Pulling the authentication module...')
-                    run(('./run', 'composer', 'require', 'laravel/ui'), check=True)
-
-                    logging.info('Setting up authentication with Vue...')
-                    run(('./run', 'artisan', 'ui', 'vue', '--auth'), check=True)
-
-                    migrate_database()
-
-                with cd(f"application/{configuration['project']['name']}"):
-                    Git.add('.')
-                    Git.commit('scaffold authentication')
-
-            # dusk
-            if 'dusk' in additional_modules:
-                with start_stack():
-                    logging.info('Pulling laravel/dusk package...')
-                    run(('./run', 'composer', 'require', 'laravel/dusk', '--dev'), check=True)
-
-                    logging.info('Setting up dusk in the project...')
-                    run(('./run', 'artisan', 'dusk:install'), check=True)
-
-                    migrate_database()
-
-                    with cd(f"application/{configuration['project']['name']}/tests"):
-                        with open('DuskTestCase.php', 'r+') as file:
-                            regex = re.compile(
-                                r'(?P<block> *return RemoteWebDriver::create\(.*\);\n)',
-                                re.DOTALL
-                            )
-                            file_contents = file.read()
-                            file.seek(0)
-                            file_contents = file_contents.replace(
-                                'static::startChromeDriver();',
-                                '// static::startChromeDriver();',
-                                1
-                            )
-                            file.write(
-                                regex.sub('''\
-        return RemoteWebDriver::create(
-            'http://selenium:4444/wd/hub',
-            DesiredCapabilities::chrome()
-                ->setCapability(ChromeOptions::CAPABILITY, $options)
-                ->setCapability('acceptInsecureCerts', true)
-        );
-''', file_contents)
-                            )
-                            file.truncate()
-
-                with cd(f"application/{configuration['project']['name']}"):
-                    Git.add('.')
-                    Git.commit('scaffold dusk')
 
             # horizon
             if 'horizon' in additional_modules:

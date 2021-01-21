@@ -23,11 +23,6 @@ services:
       adminer:
       mailhog:
       nginx:
-      <dusk>
-      selenium:
-        aliases:
-          - ${project_domain}
-      </dusk>
 
   php:
     build:
@@ -44,9 +39,6 @@ services:
       - postgresql
       - redis
       - mailhog
-      <dusk>
-      - selenium
-      </dusk>
 
   postgresql:
     image: postgres:latest
@@ -83,26 +75,6 @@ services:
     networks:
       - mailhog
 
-  <dusk>
-  selenium:
-    image: selenium/hub:latest
-    depends_on:
-      - php
-    networks:
-      - selenium
-
-  chrome:
-    image: selenium/node-chrome:latest
-    depends_on:
-      - selenium
-    volumes:
-      - /dev/shm:/dev/shm
-    environment:
-      HUB_HOST: selenium
-    networks:
-      - selenium
-  </dusk>
-
 
 networks:
   nginx:
@@ -110,9 +82,6 @@ networks:
   redis:
   adminer:
   mailhog:
-  <dusk>
-  selenium:
-  </dusk>
 
 
 volumes:
