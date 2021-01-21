@@ -304,7 +304,7 @@ class Git:
 if __name__ == '__main__':
 
     logging.basicConfig(
-        format='[%(levelname)s]: %(msg)s',
+        format='[%(levelname)s] [%(asctime)s]: %(msg)s',
         level=logging.INFO
     )
 
@@ -346,15 +346,6 @@ if __name__ == '__main__':
         nargs='*',
         choices=('authentication', 'dusk', 'horizon', 'telescope'),
         help='Additional modules to install.'
-    )
-    parser.subparsers.setup.add_argument(
-        '--jetstream',
-        choices=tuple(
-            f"{stack}{('.' + teams_support) if teams_support else ''}"
-            for stack in ('inertia', 'livewire')
-            for teams_support in ('', 'teams')
-        ),
-        help='Install the laravel/jetstream package with the appropriate stack, and activate team-support if needed.'
     )
     parser.subparsers.setup.add_argument(
         '--development',
@@ -809,39 +800,6 @@ if __name__ == '__main__':
                 with cd(f"application/{configuration['project']['name']}"):
                     Git.add('.')
                     Git.commit('scaffold telescope')
-
-            # jetstream
-            if arguments.jetstream:
-                with start_stack():
-                    logging.info('Pulling laravel/jetstream package...')
-                    run(('./run', 'composer', 'require', 'laravel/jetstream'), check=True)
-
-                    jetstream_options = arguments.jetstream.split('.')
-
-                    if len(jetstream_options) == 1:
-                        jetstream_options.append(None)
-
-                    [stack, teams_support] = jetstream_options
-                    logging.info(f"Setting up jetstream with {stack}{' and teams support' if teams_support else ''}...")
-                    installation_command = ('./run', 'artisan', 'jetstream:install', stack)
-
-                    if teams_support:
-                        installation_command += ('--teams',)
-
-                    run(installation_command, check=True)
-
-                    migrate_database()
-
-                    # yarn
-                    logging.info('Pulling yarn assets...')
-                    run(('./run', 'yarn', 'install'), check=True)
-
-                    logging.info('Compiling yarn assets...')
-                    run(('./run', 'yarn', 'run', 'dev'), check=True)
-
-                with cd(f"application/{configuration['project']['name']}"):
-                    Git.add('.')
-                    Git.commit('scaffold jetstream')
 
             # Project successfully set-up
             logging.info('Set-up complete. Build something awesome!')
