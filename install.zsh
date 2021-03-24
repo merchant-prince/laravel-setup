@@ -1,8 +1,8 @@
 #!/usr/bin/env zsh
 
 
-PYTHON_VERSION="3.9"
-PIP_VERSION="20.3.3"
+REQUIRED_PYTHON_VERSION="3.9"
+RECOMMENDED_PIP_VERSION="20.3.3"
 PROJECT_PATH="$(dirname "$(realpath "${0}")")"
 VENV_PATH="${PROJECT_PATH}/.venv"
 
@@ -21,8 +21,8 @@ fi
 success "python3... OK"
 
 info "checking python's version"
-if [ "$(python3 -c "import sys; print(''.join([str(n) for n in sys.version_info[:2]]))")" -lt "$(echo "${PYTHON_VERSION}" | tr --delete '.')" ]; then
-  error "python ${PYTHON_VERSION} or higher is required to run this project."
+if [ "$(python3 -c "import sys; print(''.join([str(n) for n in sys.version_info[:2]]))")" -lt "$(echo "${REQUIRED_PYTHON_VERSION}" | tr --delete '.')" ]; then
+  error "python ${REQUIRED_PYTHON_VERSION} or higher is required to run this project."
   exit 64
 fi
 success "python's version... OK"
@@ -37,8 +37,8 @@ fi
 success "pip3... OK"
 
 info "checking pip's version"
-if [ "$(pip3 --version | cut --delimiter ' ' --fields 2 | cut --delimiter '.' --fields '1-2' | tr --delete '.')" -lt "$(echo "${PIP_VERSION}" | cut --delimiter ' ' --fields 2 | cut --delimiter '.' --fields '1-2' | tr --delete '.')" ]; then
-  warning "pip ${PIP_VERSION} or higher might be required to run this project."
+if [ "$(pip3 --version | cut --delimiter ' ' --fields 2 | cut --delimiter '.' --fields '1-2' | tr --delete '.')" -lt "$(echo "${RECOMMENDED_PIP_VERSION}" | cut --delimiter ' ' --fields 2 | cut --delimiter '.' --fields '1-2' | tr --delete '.')" ]; then
+  warning "pip ${RECOMMENDED_PIP_VERSION} or higher MIGHT be required to run this project."
 else
   success "pip's version... OK"
 fi
