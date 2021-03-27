@@ -1,9 +1,13 @@
+"""
+This module contains code extracted from other scripts (preferably main.py)
+"""
+
 from argparse import ArgumentParser
 
 
 def parser() -> ArgumentParser:
     """
-    Create an argument parser for all the arguments passed to the script.
+    Create an argument parser for all the script's arguments.
 
     Returns:
         The customized ArgumentParser object.
