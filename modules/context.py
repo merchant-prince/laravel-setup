@@ -6,6 +6,7 @@ from contextlib import contextmanager
 def cd(destination: str) -> None:
     """
     A context manager to change directory. Mimics unix's cd.
+
     Args:
         destination (str): The directory to cd into.
     """
