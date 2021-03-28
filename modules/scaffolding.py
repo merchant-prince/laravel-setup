@@ -1,7 +1,7 @@
 from os import mkdir
 from typing import Mapping
 
-from utilities import cd
+from modules.utilities import cd
 
 
 def directory_structure_is_valid(directory_structure: Mapping) -> bool:

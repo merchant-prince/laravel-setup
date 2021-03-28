@@ -1,9 +1,9 @@
-import unittest
+from unittest import TestCase
 
 from modules.validation import is_pascal_case, domain_is_valid
 
 
-class PascalCaseTestCase(unittest.TestCase):
+class PascalCaseTestCase(TestCase):
     def test_returns_true_for_correctly_pascal_cased_strings(self) -> None:
         pascal_case_strings = [
             'One',
@@ -32,7 +32,7 @@ class PascalCaseTestCase(unittest.TestCase):
             self.assertFalse(is_pascal_case(non_pascal_cased_string))
 
 
-class DomainTestCase(unittest.TestCase):
+class DomainTestCase(TestCase):
     def test_returns_true_for_valid_domains(self) -> None:
         valid_domains = [
             'application.local',
