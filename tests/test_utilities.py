@@ -1,7 +1,7 @@
 import os
 import unittest
 
-from modules.context import cd
+from modules.utilities import cd
 
 
 class CdTestCase(unittest.TestCase):

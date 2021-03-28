@@ -1,5 +1,5 @@
-import os
 from contextlib import contextmanager
+from os import chdir, getcwd
 
 
 @contextmanager
@@ -10,10 +10,10 @@ def cd(destination: str) -> None:
     Args:
         destination (str): The directory to cd into.
     """
-    cwd = os.getcwd()
+    cwd = getcwd()
 
     try:
-        os.chdir(destination)
+        chdir(destination)
         yield
     finally:
-        os.chdir(cwd)
+        chdir(cwd)

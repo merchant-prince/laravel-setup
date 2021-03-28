@@ -1,5 +1,5 @@
 """
-This module contains code extracted from other scripts (preferably main.py)
+This module contains code extracted from other scripts (mostly main.py)
 """
 
 from argparse import ArgumentParser
@@ -40,9 +40,9 @@ def parser() -> ArgumentParser:
         help='The domain name where the project will be hosted.'
     )
     setup.add_argument(
-        '--packages',
+        '--with',
         nargs='*',
-        choices=('all', 'horizon', 'sanctum', 'scout', 'socialite', 'telescope'),
+        choices=('everything', 'horizon', 'sanctum', 'scout', 'socialite', 'telescope'),
         help='Additional packages to install.'
     )
     setup.add_argument(
