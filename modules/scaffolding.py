@@ -61,35 +61,8 @@ def create_directory_structure(directory_structure: Mapping) -> None:
 
 
 def generate_self_signed_tls_certificate(certificate_name: str, key_name: str):
-    image_name = 'laravel-setup/openssl'
-    home_directory = f'/home/{getuser()}'
-    dockerfile = f"""\
-    FROM alpine
-
-    RUN apk update && apk add --no-cache openssl && rm -rf /var/cache/apk/*
-    RUN adduser --disabled-password --home {home_directory} --uid {getuid()} {getuser()}
-
-    WORKDIR {home_directory}
-    VOLUME {home_directory}
-
-    ENTRYPOINT ["openssl"]
-    """
-
     run(
-        ('docker', 'build', '--tag', image_name, '-'),
-        input=dockerfile.encode('utf-8'),
-        check=True
-    )
-
-    run(
-        ('docker', 'run',
-         '--rm',
-         '--interactive',
-         '--tty',
-         '--user', f'{getuid()}:{getgid()}',
-         '--volume', f'{getcwd()}:{home_directory}',
-         image_name,
-         'req',
+        ('openssl', 'req',
          '-new', '-newkey', f'rsa:4096', '-days', 365, '-nodes', '-x509',
          '-subj',
          '/C=US' '/ST=Denial' '/L=Springfield' '/O=Dis' '/CN=application.local',
