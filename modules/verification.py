@@ -27,6 +27,16 @@ def directory_exists(name: str) -> bool:
 
 
 def correct_docker_version_is_installed(required_version: Tuple[int, ...]) -> bool:
+    """
+    Checks if the correct docker version is installed on the system.
+
+    Args:
+        required_version: A tuple of 2 ints representing the required major and minor versions of docker for the
+                          project.
+
+    Returns:
+        True if the current version of docker is equal to or greater than the required version.
+    """
     current_version: Tuple[int, ...] = tuple(
         int(v) for v in
         run(
