@@ -1,7 +1,11 @@
 from unittest import TestCase
+from re import sub
 from subprocess import run
 
-from modules.verification import is_pascal_case, domain_is_valid, correct_docker_version_is_installed
+from modules.verification import (
+    is_pascal_case, domain_is_valid,
+    correct_docker_version_is_installed, correct_openssl_version_is_installed
+)
 
 
 class PascalCaseTestCase(TestCase):
@@ -72,3 +76,21 @@ class DockerVersionTestCase(TestCase):
 
     def test_returns_false_for_smaller_docker_version(self) -> None:
         self.assertFalse(correct_docker_version_is_installed(tuple(v + 1 for v in self.current_docker_version)))
+
+
+class OpensslVersionTestCase(TestCase):
+    def setUp(self) -> None:
+        self.current_openssl_version = tuple(
+            int(sub(r'\D', '', v)) for v in
+            run(
+                ('openssl', 'version'),
+                capture_output=True,
+                check=True
+            ).stdout.decode('utf-8').strip().split(' ')[1].split('.')
+        )
+
+    def test_returns_true_for_correct_openssl_version(self) -> None:
+        self.assertTrue(correct_openssl_version_is_installed(self.current_openssl_version))
+
+    def test_returns_false_for_smaller_openssl_version(self) -> None:
+        self.assertFalse(correct_openssl_version_is_installed(tuple(v + 1 for v in self.current_openssl_version)))
