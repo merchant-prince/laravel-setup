@@ -1,4 +1,6 @@
-from os import mkdir
+from getpass import getuser
+from os import getcwd, getuid, getgid, mkdir
+from subprocess import run
 from typing import Mapping
 
 from modules.utilities import cd
@@ -56,3 +58,42 @@ def create_directory_structure(directory_structure: Mapping) -> None:
 
         with cd(directory_name):
             create_directory_structure(inner_structure)
+
+
+def generate_self_signed_tls_certificate(certificate_name: str, key_name: str):
+    image_name = 'laravel-setup/openssl'
+    home_directory = f'/home/{getuser()}'
+    dockerfile = f"""\
+    FROM alpine
+
+    RUN apk update && apk add --no-cache openssl && rm -rf /var/cache/apk/*
+    RUN adduser --disabled-password --home {home_directory} --uid {getuid()} {getuser()}
+
+    WORKDIR {home_directory}
+    VOLUME {home_directory}
+
+    ENTRYPOINT ["openssl"]
+    """
+
+    run(
+        ('docker', 'build', '--tag', image_name, '-'),
+        input=dockerfile.encode('utf-8'),
+        check=True
+    )
+
+    run(
+        ('docker', 'run',
+         '--rm',
+         '--interactive',
+         '--tty',
+         '--user', f'{getuid()}:{getgid()}',
+         '--volume', f'{getcwd()}:{home_directory}',
+         image_name,
+         'req',
+         '-new', '-newkey', f'rsa:4096', '-days', 365, '-nodes', '-x509',
+         '-subj',
+         '/C=US' '/ST=Denial' '/L=Springfield' '/O=Dis' '/CN=application.local',
+         '-keyout', key_name, '-out', certificate_name
+         ),
+        check=True
+    )
