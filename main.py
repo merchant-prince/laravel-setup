@@ -4,7 +4,7 @@ from typing import Mapping
 
 from modules.extracts import parser
 from modules.scaffolding import directory_structure_is_valid, create_directory_structure
-from modules.validation import directory_exists, domain_is_valid, is_pascal_case
+from modules.verification import directory_exists, domain_is_valid, is_pascal_case
 
 if __name__ == '__main__':
     arguments = parser().parse_args()
@@ -68,6 +68,6 @@ if __name__ == '__main__':
     }
 
     if not directory_structure_is_valid(project_directory_structure):
-        raise RuntimeError('The project directory structure is invalid.')
+        raise RuntimeError("The project's provided directory structure is invalid.")
 
     create_directory_structure(project_directory_structure)

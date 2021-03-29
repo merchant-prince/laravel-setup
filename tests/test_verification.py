@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from modules.validation import is_pascal_case, domain_is_valid
+from modules.verification import is_pascal_case, domain_is_valid
 
 
 class PascalCaseTestCase(TestCase):
