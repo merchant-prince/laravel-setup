@@ -4,9 +4,18 @@ from typing import Mapping
 
 from modules.extracts import parser
 from modules.scaffolding import directory_structure_is_valid, create_directory_structure
-from modules.verification import directory_exists, domain_is_valid, is_pascal_case
+from modules.verification import directory_exists, domain_is_valid, is_pascal_case, correct_docker_version_is_installed
 
 if __name__ == '__main__':
+    requirements: Mapping[str, str] = {
+        'docker.version': '20.10'
+    }
+
+    if not correct_docker_version_is_installed(tuple(int(v) for v in requirements['docker.version'].split('.'))):
+        raise RuntimeError(
+            f"The correct docker version is not installed. At least docker f{requirements['docker.version']} is needed."
+        )
+
     arguments = parser().parse_args()
 
     if not is_pascal_case(arguments.project_name):

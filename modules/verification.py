@@ -4,6 +4,8 @@ This module contains validation rules used throughout the project.
 
 import re
 from pathlib import Path
+from subprocess import run
+from typing import Tuple
 
 
 def is_pascal_case(string: str) -> bool:
@@ -22,3 +24,16 @@ def domain_is_valid(domain: str) -> bool:
 
 def directory_exists(name: str) -> bool:
     return Path(name).is_dir()
+
+
+def correct_docker_version_is_installed(required_version: Tuple[int, ...]) -> bool:
+    current_version: Tuple[int, ...] = tuple(
+        int(v) for v in
+        run(
+            ('docker', 'version', '--format', '{{.Server.Version}}'),
+            capture_output=True,
+            check=True
+        ).stdout.decode('utf-8').strip().split('.')[:2]
+    )
+
+    return current_version >= required_version

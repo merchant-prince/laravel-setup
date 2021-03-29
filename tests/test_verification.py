@@ -1,6 +1,7 @@
 from unittest import TestCase
+from subprocess import run
 
-from modules.verification import is_pascal_case, domain_is_valid
+from modules.verification import is_pascal_case, domain_is_valid, correct_docker_version_is_installed
 
 
 class PascalCaseTestCase(TestCase):
@@ -53,3 +54,21 @@ class DomainTestCase(TestCase):
 
         for invalid_domain in invalid_domains:
             self.assertFalse(domain_is_valid(invalid_domain))
+
+
+class DockerVersionTestCase(TestCase):
+    def setUp(self) -> None:
+        self.current_docker_version = tuple(
+            int(v) for v in
+            run(
+                ('docker', 'version', '--format', '{{.Server.Version}}'),
+                capture_output=True,
+                check=True
+            ).stdout.decode('utf-8').strip().split('.')[:2]
+        )
+
+    def test_returns_true_for_correct_docker_version(self) -> None:
+        self.assertTrue(correct_docker_version_is_installed(self.current_docker_version))
+
+    def test_returns_false_for_smaller_docker_version(self) -> None:
+        self.assertFalse(correct_docker_version_is_installed(tuple(v + 1 for v in self.current_docker_version)))
