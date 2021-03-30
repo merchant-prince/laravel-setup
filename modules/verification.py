@@ -2,10 +2,10 @@
 This module contains validation rules used throughout the project.
 """
 
-from re import compile, IGNORECASE, sub
 from pathlib import Path
+from re import compile, IGNORECASE, Pattern
 from subprocess import run
-from typing import Tuple
+from typing import Tuple, Mapping
 
 
 def is_pascal_case(string: str) -> bool:
@@ -26,92 +26,21 @@ def directory_exists(name: str) -> bool:
     return Path(name).is_dir()
 
 
-def correct_docker_version_is_installed(required_version: Tuple[int, ...]) -> bool:
-    """
-    Checks if the correct docker version is installed on the system.
+def correct_version_is_installed(version_command: Tuple[str, ...], required_version: str) -> bool:
+    version_regex: Pattern = compile(r'.*?(?P<major>\d+)\.(?P<minor>\d+)\.(?P<release>\d+).*?')
+    current_version_map: Mapping[str, int] = {
+        label: int(version) for label, version in
+        version_regex.match(
+            run(version_command, capture_output=True, check=True).stdout.decode('utf-8')
+        ).groupdict().items()
+    }
+    required_version_map: Mapping[str, int] = {
+        label: int(version) for label, version in
+        version_regex.match(required_version).groupdict().items()
+    }
 
-    Args:
-        required_version: A tuple of 2 ints representing the required major and minor versions of docker for the
-                          project.
-
-    Returns:
-        True if the current version of docker is equal to or greater than the required version.
-    """
-    current_version: Tuple[int, ...] = tuple(
-        int(v) for v in
-        run(
-            ('docker', 'version', '--format', '{{.Server.Version}}'),
-            capture_output=True,
-            check=True
-        ).stdout.decode('utf-8').strip().split('.')[:2]
+    return (
+            current_version_map['major'] >= required_version_map['major']
+            and
+            current_version_map['minor'] >= required_version_map['minor']
     )
-
-    return current_version >= required_version
-
-
-def correct_docker_compose_version_is_installed(required_version: Tuple[int, ...]) -> bool:
-    """
-    Checks if the correct docker-compose version is installed on the system.
-
-    Args:
-        required_version: A tuple of 2 ints representing the required major and minor versions of docker-compose for the
-                          project.
-
-    Returns:
-        True if the current version of docker-compose is equal to or greater than the required version.
-    """
-    current_version: Tuple[int, ...] = tuple(
-        int(v) for v in
-        run(
-            ('docker-compose', 'version', '--short'),
-            capture_output=True,
-            check=True
-        ).stdout.decode('utf-8').strip().split('.')[:2]
-    )
-
-    return current_version >= required_version
-
-
-def correct_openssl_version_is_installed(required_version: Tuple[int, ...]) -> bool:
-    """
-    Checks if the correct openssl version is installed on the system.
-
-    Args:
-        required_version: A tuple of 3 ints representing the required major, minor, and release versions of openssl for
-                          the project.
-
-    Returns:
-        True if the current version of openssl is equal to or greater than the required version.
-    """
-    current_version: Tuple[int, ...] = tuple(
-        int(sub(r'\D', '', v)) for v in
-        run(
-            ('openssl', 'version'),
-            capture_output=True,
-            check=True
-        ).stdout.decode('utf-8').strip().split(' ')[1].split('.')
-    )
-
-    return current_version >= required_version
-
-
-def correct_git_version_is_installed(required_version: Tuple[int, ...]) -> bool:
-    """
-    Checks if the correct git version is installed on the system.
-
-    Args:
-        required_version: A tuple of 3 ints representing the required major and minor versions of git for the project.
-
-    Returns:
-        True if the current version of git is equal to or greater than the required version.
-    """
-    current_version: Tuple[int, ...] = tuple(
-        int(v) for v in
-        run(
-            ('git', 'version'),
-            capture_output=True,
-            check=True
-        ).stdout.decode('utf-8').strip().split(' ')[-1].split('.')[:2]
-    )
-
-    return current_version >= required_version

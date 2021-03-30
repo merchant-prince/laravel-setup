@@ -1,12 +1,9 @@
-from unittest import TestCase
-from re import sub
+from re import compile
 from subprocess import run
+from typing import Tuple
+from unittest import TestCase
 
-from modules.verification import (
-    is_pascal_case, domain_is_valid,
-    correct_docker_version_is_installed, correct_docker_compose_version_is_installed,
-    correct_openssl_version_is_installed
-)
+from modules.verification import is_pascal_case, domain_is_valid, correct_version_is_installed
 
 
 class PascalCaseTestCase(TestCase):
@@ -61,55 +58,99 @@ class DomainTestCase(TestCase):
             self.assertFalse(domain_is_valid(invalid_domain))
 
 
-class DockerVersionTestCase(TestCase):
-    def setUp(self) -> None:
-        self.current_docker_version = tuple(
-            int(v) for v in
-            run(
-                ('docker', 'version', '--format', '{{.Server.Version}}'),
-                capture_output=True,
-                check=True
-            ).stdout.decode('utf-8').strip().split('.')[:2]
-        )
+class CorrectVersionIsInstalledTestCase(TestCase):
+    @staticmethod
+    def docker_version_command() -> Tuple[str, ...]:
+        return 'docker', 'version', '--format', '{{.Server.Version}}'
+
+    @staticmethod
+    def docker_compose_version_command() -> Tuple[str, ...]:
+        return 'docker-compose', 'version', '--short'
+
+    @staticmethod
+    def openssl_version_command() -> Tuple[str, ...]:
+        return 'openssl', 'version'
+
+    @staticmethod
+    def git_version_command() -> Tuple[str, ...]:
+        return 'git', 'version'
+
+    @staticmethod
+    def current_version(command: Tuple[str, ...]) -> str:
+        return run(command, capture_output=True, check=True).stdout.decode('utf-8').strip()
 
     def test_returns_true_for_correct_docker_version(self) -> None:
-        self.assertTrue(correct_docker_version_is_installed(self.current_docker_version))
-
-    def test_returns_false_for_smaller_docker_version(self) -> None:
-        self.assertFalse(correct_docker_version_is_installed(tuple(v + 1 for v in self.current_docker_version)))
-
-
-class DockerComposeVersionTestCase(TestCase):
-    def setUp(self) -> None:
-        self.current_docker_compose_version = tuple(
-            int(v) for v in
-            run(
-                ('docker-compose', 'version', '--short'),
-                capture_output=True,
-                check=True
-            ).stdout.decode('utf-8').strip().split('.')[:2]
+        self.assertTrue(
+            correct_version_is_installed(
+                self.docker_version_command(),
+                self.current_version(self.docker_version_command())
+            )
         )
 
     def test_returns_true_for_correct_docker_compose_version(self) -> None:
-        self.assertTrue(correct_docker_compose_version_is_installed(self.current_docker_compose_version))
-
-    def test_returns_false_for_smaller_docker_compose_version(self) -> None:
-        self.assertFalse(correct_docker_compose_version_is_installed(tuple(v + 1 for v in self.current_docker_compose_version)))
-
-
-class OpensslVersionTestCase(TestCase):
-    def setUp(self) -> None:
-        self.current_openssl_version = tuple(
-            int(sub(r'\D', '', v)) for v in
-            run(
-                ('openssl', 'version'),
-                capture_output=True,
-                check=True
-            ).stdout.decode('utf-8').strip().split(' ')[1].split('.')
+        self.assertTrue(
+            correct_version_is_installed(
+                self.docker_compose_version_command(),
+                self.current_version(self.docker_compose_version_command())
+            )
         )
 
     def test_returns_true_for_correct_openssl_version(self) -> None:
-        self.assertTrue(correct_openssl_version_is_installed(self.current_openssl_version))
+        self.assertTrue(
+            correct_version_is_installed(
+                self.openssl_version_command(),
+                self.current_version(self.openssl_version_command())
+            )
+        )
+
+    def test_returns_true_for_correct_git_version(self) -> None:
+        self.assertTrue(
+            correct_version_is_installed(
+                self.git_version_command(),
+                self.current_version(self.git_version_command())
+            )
+        )
+
+    def test_returns_false_for_smaller_docker_version(self) -> None:
+        self.assertFalse(
+            correct_version_is_installed(
+                self.docker_version_command(),
+                '.'.join(str(int(v) + 1) for v in self.current_version(self.docker_version_command()).split('.'))
+            )
+        )
+
+    def test_returns_false_for_smaller_docker_compose_version(self) -> None:
+        self.assertFalse(
+            correct_version_is_installed(
+                self.docker_compose_version_command(),
+                '.'.join(
+                    str(int(v) + 1) for v in self.current_version(self.docker_compose_version_command()).split('.')
+                )
+            )
+        )
 
     def test_returns_false_for_smaller_openssl_version(self) -> None:
-        self.assertFalse(correct_openssl_version_is_installed(tuple(v + 1 for v in self.current_openssl_version)))
+        self.assertFalse(
+            correct_version_is_installed(
+                self.openssl_version_command(),
+                '.'.join(
+                    str(int(v) + 1) for v in
+                    compile(r'.*?(?P<version>\d+\.\d+\.\d+).*?').match(
+                        self.current_version(self.openssl_version_command())
+                    ).groupdict()['version'].split('.')
+                )
+            )
+        )
+
+    def test_returns_false_for_smaller_git_version(self) -> None:
+        self.assertFalse(
+            correct_version_is_installed(
+                self.git_version_command(),
+                '.'.join(
+                    str(int(v) + 1) for v in
+                    compile(r'.*?(?P<version>\d+\.\d+\.\d+).*?').match(
+                        self.current_version(self.git_version_command())
+                    ).groupdict()['version'].split('.')
+                )
+            )
+        )
