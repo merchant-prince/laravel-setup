@@ -1,7 +1,8 @@
 from os import getcwd
+from pathlib import Path
 from unittest import TestCase
 
-from modules.utilities import cd
+from modules.utilities import cd, template_path
 
 
 class CdTestCase(TestCase):
@@ -32,3 +33,11 @@ class CdTestCase(TestCase):
                 pass
         except FileNotFoundError:
             self.assertEqual(getcwd(), self.old_cwd)
+
+
+class TemplatePathTestCase(TestCase):
+    def test_points_to_the_templates_directory(self) -> None:
+        self.assertEqual(
+            template_path(''),
+            Path(f'{Path(__file__).parent.parent}/templates')
+        )

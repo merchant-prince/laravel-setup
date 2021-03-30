@@ -1,5 +1,6 @@
 from contextlib import contextmanager
 from os import chdir, getcwd
+from pathlib import Path
 
 
 @contextmanager
@@ -17,3 +18,16 @@ def cd(destination: str) -> None:
         yield
     finally:
         chdir(cwd)
+
+
+def template_path(path: str) -> Path:
+    """
+    Get a template's absolute path from a path relative to the 'templates' directory.
+
+    Args:
+        path: Template's path relative to the 'templates' directory.
+
+    Returns:
+        A Path object pointing to the template.
+    """
+    return Path(f'{Path(__file__).parent.parent}/templates/{path}')
