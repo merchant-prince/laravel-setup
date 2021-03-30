@@ -93,3 +93,25 @@ def correct_openssl_version_is_installed(required_version: Tuple[int, ...]) -> b
     )
 
     return current_version >= required_version
+
+
+def correct_git_version_is_installed(required_version: Tuple[int, ...]) -> bool:
+    """
+    Checks if the correct git version is installed on the system.
+
+    Args:
+        required_version: A tuple of 3 ints representing the required major and minor versions of git for the project.
+
+    Returns:
+        True if the current version of git is equal to or greater than the required version.
+    """
+    current_version: Tuple[int, ...] = tuple(
+        int(v) for v in
+        run(
+            ('git', 'version'),
+            capture_output=True,
+            check=True
+        ).stdout.decode('utf-8').strip().split(' ')[-1].split('.')[:2]
+    )
+
+    return current_version >= required_version
