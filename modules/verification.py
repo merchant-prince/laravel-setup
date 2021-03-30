@@ -27,6 +27,16 @@ def directory_exists(name: str) -> bool:
 
 
 def correct_version_is_installed(version_command: Tuple[str, ...], required_version: str) -> bool:
+    """
+    Checks whether the correct version of a program is installed.
+
+    Args:
+        version_command: The command that outputs the version of the program to stdout.
+        required_version: The required version of the command in the form "<major>.<minor>.<release>"
+
+    Returns:
+        True if the current 'major' and 'minor' versions of the program are greater than or equal to the required ones.
+    """
     version_regex: Pattern = compile(r'.*?(?P<major>\d+)\.(?P<minor>\d+)\.(?P<release>\d+).*?')
     current_version_map: Mapping[str, int] = {
         label: int(version) for label, version in

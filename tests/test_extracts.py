@@ -1,7 +1,8 @@
 from argparse import ArgumentParser, Namespace
+from typing import Mapping
 from unittest import TestCase
 
-from modules.extracts import parser
+from modules.extracts import parser, preliminary_checks
 
 
 class ParserTestCase(TestCase):
@@ -59,3 +60,31 @@ class ParserTestCase(TestCase):
         arguments: Namespace = self.argument_parser.parse_args(['setup', 'One', '--development'])
 
         self.assertTrue(arguments.development)
+
+
+class PreliminaryChecksTestCase(TestCase):
+    def setUp(self) -> None:
+        self.requirements: Mapping[str, str] = {
+            'docker.version': '20.10.5',
+            'docker-compose.version': '1.28.0',
+            'openssl.version': '1.1.1',
+            'git.version': '2.31.0',
+        }
+
+    def remove_program_version_key_and_assert_raises_keyerror(self, key: str):
+        del self.requirements[key]
+
+        with self.assertRaises(KeyError):
+            preliminary_checks(requirements=self.requirements)
+
+    def test_the_function_fails_if_docker_version_is_not_specified(self) -> None:
+        self.remove_program_version_key_and_assert_raises_keyerror('docker.version')
+
+    def test_the_function_fails_if_docker_compose_version_is_not_specified(self) -> None:
+        self.remove_program_version_key_and_assert_raises_keyerror('docker-compose.version')
+
+    def test_the_function_fails_if_openssl_version_is_not_specified(self) -> None:
+        self.remove_program_version_key_and_assert_raises_keyerror('openssl.version')
+
+    def test_the_function_fails_if_git_version_is_not_specified(self) -> None:
+        self.remove_program_version_key_and_assert_raises_keyerror('git.version')
