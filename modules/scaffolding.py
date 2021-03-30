@@ -1,5 +1,4 @@
-from getpass import getuser
-from os import getcwd, getuid, getgid, mkdir
+from os import mkdir
 from subprocess import run
 from typing import Mapping
 
