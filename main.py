@@ -2,8 +2,7 @@
 
 from typing import Mapping
 
-from modules.extracts import parser, preliminary_checks, validate_script_arguments
-from modules.scaffolding import directory_structure_is_valid, create_directory_structure
+from modules.extracts import parser, preliminary_checks, scaffold_project_directory_structure, validate_script_arguments
 
 if __name__ == '__main__':
     preliminary_checks(requirements={
@@ -27,45 +26,42 @@ if __name__ == '__main__':
         'services.postgres.password': 'password',
     }
 
-    project_directory_structure: Mapping[str, ...] = {
-        configuration['project.name']: {
-            # docker-compose.yml
-            # .gitignore
-            # README.md
+    scaffold_project_directory_structure(
+        project_directory_structure := {
+            configuration['project.name']: {
+                # docker-compose.yml
+                # .gitignore
+                # README.md
 
-            'configuration': {
-                'nginx': {
-                    'conf.d': {
-                        # default.conf
-                        # utils.conf
+                'configuration': {
+                    'nginx': {
+                        'conf.d': {
+                            # default.conf
+                            # utils.conf
+                        },
+                        'ssl': {
+                            # key.pem
+                            # certificate.pem
+                        }
                     },
-                    'ssl': {
-                        # key.pem
-                        # certificate.pem
+                    'supervisor': {
+                        'conf.d': {
+                            # supervisord.conf
+                        }
                     }
                 },
-                'supervisor': {
-                    'conf.d': {
-                        # supervisord.conf
+                'docker-compose': {
+                    'services': {
+                        'php': {
+                            # Dockerfile
+                        }
                     }
-                }
-            },
-            'docker-compose': {
-                'services': {
-                    'php': {
-                        # Dockerfile
+                },
+                'application': {
+                    'core': {
+                        # Laravel application
                     }
-                }
-            },
-            'application': {
-                'core': {
-                    # Laravel application
                 }
             }
         }
-    }
-
-    if not directory_structure_is_valid(project_directory_structure):
-        raise RuntimeError("The project's provided directory structure is invalid.")
-
-    create_directory_structure(project_directory_structure)
+    )
