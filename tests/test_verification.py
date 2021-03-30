@@ -4,7 +4,8 @@ from subprocess import run
 
 from modules.verification import (
     is_pascal_case, domain_is_valid,
-    correct_docker_version_is_installed, correct_openssl_version_is_installed
+    correct_docker_version_is_installed, correct_docker_compose_version_is_installed,
+    correct_openssl_version_is_installed
 )
 
 
@@ -76,6 +77,24 @@ class DockerVersionTestCase(TestCase):
 
     def test_returns_false_for_smaller_docker_version(self) -> None:
         self.assertFalse(correct_docker_version_is_installed(tuple(v + 1 for v in self.current_docker_version)))
+
+
+class DockerComposeVersionTestCase(TestCase):
+    def setUp(self) -> None:
+        self.current_docker_compose_version = tuple(
+            int(v) for v in
+            run(
+                ('docker-compose', 'version', '--short'),
+                capture_output=True,
+                check=True
+            ).stdout.decode('utf-8').strip().split('.')[:2]
+        )
+
+    def test_returns_true_for_correct_docker_compose_version(self) -> None:
+        self.assertTrue(correct_docker_compose_version_is_installed(self.current_docker_compose_version))
+
+    def test_returns_false_for_smaller_docker_compose_version(self) -> None:
+        self.assertFalse(correct_docker_compose_version_is_installed(tuple(v + 1 for v in self.current_docker_compose_version)))
 
 
 class OpensslVersionTestCase(TestCase):

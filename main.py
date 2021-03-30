@@ -1,23 +1,32 @@
 #!/usr/bin/env python3
 
+# TODO: main should delegate to other modules. its only purpose is to be a clear entrypoint
+
 from typing import Mapping
 
 from modules.extracts import parser
 from modules.scaffolding import directory_structure_is_valid, create_directory_structure
 from modules.verification import (
     directory_exists, domain_is_valid, is_pascal_case,
-    correct_docker_version_is_installed, correct_openssl_version_is_installed
+    correct_docker_version_is_installed, correct_docker_compose_version_is_installed,
+    correct_openssl_version_is_installed
 )
 
 if __name__ == '__main__':
     requirements: Mapping[str, str] = {
         'docker.version': '20.10',
+        'docker-compose.version': '1.28',
         'openssl.version': '1.1.1',
     }
 
     if not correct_docker_version_is_installed(tuple(int(v) for v in requirements['docker.version'].split('.'))):
         raise RuntimeError(
             f"The correct docker version is not installed. At least docker f{requirements['docker.version']} is needed."
+        )
+
+    if not correct_docker_compose_version_is_installed(tuple(int(v) for v in requirements['docker-compose.version'].split('.'))):
+        raise RuntimeError(
+            f"The correct docker-compose version is not installed. At least docker f{requirements['docker.version']} is needed."
         )
 
     if not correct_openssl_version_is_installed(tuple(int(v) for v in requirements['docker.version'].split('.'))):

@@ -49,6 +49,29 @@ def correct_docker_version_is_installed(required_version: Tuple[int, ...]) -> bo
     return current_version >= required_version
 
 
+def correct_docker_compose_version_is_installed(required_version: Tuple[int, ...]) -> bool:
+    """
+    Checks if the correct docker-compose version is installed on the system.
+
+    Args:
+        required_version: A tuple of 2 ints representing the required major and minor versions of docker-compose for the
+                          project.
+
+    Returns:
+        True if the current version of docker-compose is equal to or greater than the required version.
+    """
+    current_version: Tuple[int, ...] = tuple(
+        int(v) for v in
+        run(
+            ('docker-compose', 'version', '--short'),
+            capture_output=True,
+            check=True
+        ).stdout.decode('utf-8').strip().split('.')[:2]
+    )
+
+    return current_version >= required_version
+
+
 def correct_openssl_version_is_installed(required_version: Tuple[int, ...]) -> bool:
     """
     Checks if the correct openssl version is installed on the system.
