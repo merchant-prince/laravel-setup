@@ -2,10 +2,42 @@
 This module contains code extracted from other scripts (mostly main.py)
 """
 
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Namespace
 from typing import Mapping
 
-from modules.verification import correct_version_is_installed
+from modules.verification import correct_version_is_installed, directory_exists, domain_is_valid, is_pascal_case
+
+
+def preliminary_checks(*, requirements: Mapping[str, str]) -> None:
+    """
+    Checks whether the correct version of the dependencies of the script are installed.
+
+    Args:
+        requirements: Versions of the dependencies
+    """
+    if not correct_version_is_installed(
+            ('docker', 'version', '--format', '{{.Server.Version}}'), requirements['docker.version']):
+        raise RuntimeError(
+            f"The correct docker version is not installed. Docker >= v{requirements['docker.version']} is needed."
+        )
+
+    if not correct_version_is_installed(
+            ('docker-compose', 'version', '--short'), requirements['docker-compose.version']):
+        raise RuntimeError(
+            f"The correct docker-compose version is not installed. Docker-Compose >= v{requirements['docker-compose.version']} is needed."
+        )
+
+    if not correct_version_is_installed(
+            ('openssl', 'version'), requirements['openssl.version']):
+        raise RuntimeError(
+            f"The correct openssl version is not installed. OpenSSL >= v{requirements['openssl.version']} is needed."
+        )
+
+    if not correct_version_is_installed(
+            ('git', 'version'), requirements['git.version']):
+        raise RuntimeError(
+            f"The correct git version is not installed. Git >= v{requirements['git.version']} is needed."
+        )
 
 
 def parser() -> ArgumentParser:
@@ -57,33 +89,13 @@ def parser() -> ArgumentParser:
     return parser_
 
 
-def preliminary_checks(*, requirements: Mapping[str, str]) -> None:
-    """
-    Checks whether the correct version of the dependencies of the script are installed.
+def validate_script_arguments(arguments: Namespace) -> None:
+    if not is_pascal_case(arguments.project_name):
+        raise RuntimeError(f"The project name: '{arguments.project_name}' is not pascal-cased.")
 
-    Args:
-        requirements: Versions of the dependencies
-    """
-    if not correct_version_is_installed(
-            ('docker', 'version', '--format', '{{.Server.Version}}'), requirements['docker.version']):
+    if directory_exists(arguments.project_name):
         raise RuntimeError(
-            f"The correct docker version is not installed. Docker >= v{requirements['docker.version']} is needed."
-        )
+            f"The directory: '{arguments.project_name}' already exists in the current working directory.")
 
-    if not correct_version_is_installed(
-            ('docker-compose', 'version', '--short'), requirements['docker-compose.version']):
-        raise RuntimeError(
-            f"The correct docker-compose version is not installed. Docker-Compose >= v{requirements['docker-compose.version']} is needed."
-        )
-
-    if not correct_version_is_installed(
-            ('openssl', 'version'), requirements['openssl.version']):
-        raise RuntimeError(
-            f"The correct openssl version is not installed. OpenSSL >= v{requirements['openssl.version']} is needed."
-        )
-
-    if not correct_version_is_installed(
-            ('git', 'version'), requirements['git.version']):
-        raise RuntimeError(
-            f"The correct git version is not installed. Git >= v{requirements['git.version']} is needed."
-        )
+    if not domain_is_valid(arguments.domain):
+        raise RuntimeError(f"The domain: '{arguments.domain}' is invalid.")

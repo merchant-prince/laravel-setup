@@ -1,14 +1,9 @@
 #!/usr/bin/env python3
 
-# TODO: main should delegate to other modules. its only purpose is to be a clear entrypoint
-
 from typing import Mapping
 
-from modules.extracts import parser, preliminary_checks
+from modules.extracts import parser, preliminary_checks, validate_script_arguments
 from modules.scaffolding import directory_structure_is_valid, create_directory_structure
-from modules.verification import (
-    directory_exists, domain_is_valid, is_pascal_case,
-)
 
 if __name__ == '__main__':
     preliminary_checks(requirements={
@@ -18,17 +13,7 @@ if __name__ == '__main__':
         'git.version': '2.31.0',
     })
 
-    arguments = parser().parse_args()
-
-    if not is_pascal_case(arguments.project_name):
-        raise RuntimeError(f"The project name: '{arguments.project_name}' is not pascal-cased.")
-
-    if directory_exists(arguments.project_name):
-        raise RuntimeError(
-            f"The directory: '{arguments.project_name}' already exists in the current working directory.")
-
-    if not domain_is_valid(arguments.domain):
-        raise RuntimeError(f"The domain: '{arguments.domain}' is invalid.")
+    validate_script_arguments(arguments := parser().parse_args())
 
     configuration: Mapping[str, str] = {
         'project.name': arguments.project_name,
@@ -42,7 +27,7 @@ if __name__ == '__main__':
         'services.postgres.password': 'password',
     }
 
-    project_directory_structure = {
+    project_directory_structure: Mapping[str, ...] = {
         configuration['project.name']: {
             # docker-compose.yml
             # .gitignore
@@ -73,7 +58,9 @@ if __name__ == '__main__':
                 }
             },
             'application': {
-                # Laravel application
+                'core': {
+                    # Laravel application
+                }
             }
         }
     }
