@@ -3,7 +3,7 @@ This module contains code extracted from other scripts (mostly main.py)
 """
 
 from argparse import ArgumentParser, Namespace
-from typing import Mapping
+from typing import Any, Mapping
 
 from modules.scaffolding import directory_structure_is_valid, create_directory_structure
 from modules.verification import correct_version_is_installed, directory_exists, domain_is_valid, is_pascal_case
@@ -102,7 +102,7 @@ def validate_script_arguments(arguments: Namespace) -> None:
         raise RuntimeError(f"The domain: '{arguments.domain}' is invalid.")
 
 
-def scaffold_project_directory_structure(directory_structure: Mapping[str, ...]) -> None:
+def scaffold_project_directory_structure(directory_structure: Mapping[str, Any]) -> None:
     if not directory_structure_is_valid(directory_structure):
         raise RuntimeError("The project's provided directory structure is invalid.")
 

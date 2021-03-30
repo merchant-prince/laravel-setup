@@ -59,13 +59,28 @@ def create_directory_structure(directory_structure: Mapping) -> None:
             create_directory_structure(inner_structure)
 
 
-def generate_self_signed_tls_certificate(certificate_name: str, key_name: str):
+def generate_self_signed_tls_certificate(*, certificate_name: str, key_name: str, domain: str) -> None:
+    """
+    Generate an SSL certificate with its associated key in the current working directory.
+
+    Args:
+        certificate_name: Name of the certificate file.
+        key_name: Name of the key file.
+        domain: The domain for which the SSL certificate is being created.
+    """
     run(
-        ('openssl', 'req',
-         '-new', '-newkey', f'rsa:4096', '-days', 365, '-nodes', '-x509',
-         '-subj',
-         '/C=US' '/ST=Denial' '/L=Springfield' '/O=Dis' '/CN=application.local',
-         '-keyout', key_name, '-out', certificate_name
-         ),
+        (
+            'openssl', 'req',
+            '-x509',
+            '-newkey', 'rsa:4096',
+            '-sha256',
+            '-days', '730',
+            '-nodes',
+            '-keyout', key_name,
+            '-out', certificate_name,
+            '-subj', f'/CN={domain}',
+            '-addext', f'subjectAltName=DNS:{domain}',
+        ),
+        capture_output=True,
         check=True
     )

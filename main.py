@@ -3,6 +3,8 @@
 from typing import Mapping
 
 from modules.extracts import parser, preliminary_checks, scaffold_project_directory_structure, validate_script_arguments
+from modules.scaffolding import generate_self_signed_tls_certificate
+from modules.utilities import cd
 
 if __name__ == '__main__':
     preliminary_checks(requirements={
@@ -65,3 +67,11 @@ if __name__ == '__main__':
             }
         }
     )
+
+    with cd(configuration['project.name']):
+        with cd('configuration/nginx/ssl'):
+            generate_self_signed_tls_certificate(
+                certificate_name=configuration['services.nginx.ssl.certificate'],
+                key_name=configuration['services.nginx.ssl.key'],
+                domain=configuration['project.domain']
+            )
