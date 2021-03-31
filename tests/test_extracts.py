@@ -51,16 +51,6 @@ class ParserTestCase(TestCase):
 
         self.assertListEqual(arguments.__getattribute__('with'), choices)
 
-    def test_script_has_a_development_optional_switch(self) -> None:
-        arguments: Namespace = self.argument_parser.parse_args(['setup', 'One'])
-
-        self.assertFalse(arguments.development)
-
-    def test_script_has_a_development_optional_switch_that_returns_True(self) -> None:
-        arguments: Namespace = self.argument_parser.parse_args(['setup', 'One', '--development'])
-
-        self.assertTrue(arguments.development)
-
 
 class PreliminaryChecksTestCase(TestCase):
     def setUp(self) -> None:

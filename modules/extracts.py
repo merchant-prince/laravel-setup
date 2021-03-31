@@ -3,10 +3,11 @@ This module contains code extracted from other scripts (mostly main.py)
 """
 
 from argparse import ArgumentParser, Namespace
-from os import getuid, getgid
+from os import getuid, getgid, getcwd
 from pathlib import Path
 from shutil import copyfile
 from string import Template
+from subprocess import run
 from typing import Any, Mapping, Union
 
 from modules.scaffolding import directory_structure_is_valid, create_directory_structure, \
@@ -87,11 +88,6 @@ def parser() -> ArgumentParser:
         choices=('sanctum', 'scout', 'socialite'),
         help='Additional packages to install.'
     )
-    setup_subparser.add_argument(
-        '--development',
-        action='store_true',
-        help='Install the development version of laravel.'
-    )
 
     return main_parser
 
@@ -108,14 +104,14 @@ def validate_script_arguments(arguments: Namespace) -> None:
         raise RuntimeError(f"The domain: '{arguments.domain}' is invalid.")
 
 
-def scaffold_project_directory_structure(directory_structure: Mapping[str, Any]) -> None:
+def scaffold_directory_structure(directory_structure: Mapping[str, Any]) -> None:
     if not directory_structure_is_valid(directory_structure):
         raise RuntimeError("The project's provided directory structure is invalid.")
 
     create_directory_structure(directory_structure)
 
 
-def generate_project_configuration_files(configuration: Mapping[str, Union[str, int]]) -> None:
+def generate_configuration_files(configuration: Mapping[str, Union[str, int]]) -> None:
     with cd(configuration['project.name']):
         with cd('configuration/nginx/ssl'):
             generate_self_signed_tls_certificate(
@@ -192,3 +188,24 @@ def generate_project_configuration_files(configuration: Mapping[str, Union[str, 
 
         with cd('docker-compose/services/php'):
             copyfile(template_path('docker-compose/services/php/Dockerfile'), f'{Path.cwd()}/Dockerfile')
+
+
+def pull_laravel(project_name: str) -> None:
+    with cd(f'{project_name}/application/core'):
+        run(
+            (
+                'docker', 'run',
+                '--rm',
+                '--interactive',
+                '--tty',
+                '--user',
+                f'{getuid()}:{getgid()}',
+                '--mount', f'type=bind,source={getcwd()},target=/application',
+                '--workdir', '/application',
+                'composer', 'create-project',
+                '--prefer-dist',
+                '--ignore-platform-reqs',
+                'laravel/laravel', project_name
+            ),
+            check=True
+        )

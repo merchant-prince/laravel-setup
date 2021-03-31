@@ -2,8 +2,8 @@
 
 from typing import Mapping, Union
 
-from modules.extracts import generate_project_configuration_files, parser, preliminary_checks, \
-    scaffold_project_directory_structure, validate_script_arguments
+from modules.extracts import generate_configuration_files, parser, preliminary_checks, \
+    pull_laravel, scaffold_directory_structure, validate_script_arguments
 
 if __name__ == '__main__':
     preliminary_checks(requirements={
@@ -32,7 +32,7 @@ if __name__ == '__main__':
         'miscellaneous.node.image.tag': 'stretch',
     }
 
-    scaffold_project_directory_structure({
+    scaffold_directory_structure({
         configuration['project.name']: {
             # docker-compose.yml
             # .gitignore
@@ -70,4 +70,6 @@ if __name__ == '__main__':
         }
     })
 
-    generate_project_configuration_files(configuration)
+    generate_configuration_files(configuration)
+
+    pull_laravel(configuration['project.name'])
