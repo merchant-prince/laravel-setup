@@ -142,3 +142,9 @@ if __name__ == '__main__':
                             'MAILHOG_PORT': configuration['services.mailhog.port'],
                         })
                     )
+
+            with cd('supervisor/conf.d'):
+                copyfile(
+                    template_path('configuration/supervisor/conf.d/supervisord.conf'),
+                    f'{Path.cwd()}/supervisord.conf'
+                )
