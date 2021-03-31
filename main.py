@@ -2,6 +2,7 @@
 
 from os import getuid, getgid
 from pathlib import Path
+from shutil import copyfile
 from string import Template
 from typing import Mapping, Union
 
@@ -105,3 +106,5 @@ if __name__ == '__main__':
             )
 
         Path('run').chmod(0o755)
+
+        copyfile(template_path('.gitignore'), f'{Path.cwd()}/.gitignore')
