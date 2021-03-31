@@ -32,7 +32,8 @@ def preliminary_checks(*, requirements: Mapping[str, str]) -> None:
     if not correct_version_is_installed(
             ('docker-compose', 'version', '--short'), requirements['docker-compose.version']):
         raise RuntimeError(
-            f"The correct docker-compose version is not installed. Docker-Compose >= v{requirements['docker-compose.version']} is needed."
+            'The correct docker-compose version is not installed. '
+            f"Docker-Compose >= v{requirements['docker-compose.version']} is needed."
         )
 
     if not correct_version_is_installed(
@@ -85,7 +86,7 @@ def parser() -> ArgumentParser:
     setup_subparser.add_argument(
         '--with',
         nargs='*',
-        choices=('sanctum', 'scout', 'socialite'),
+        choices=('horizon', 'sanctum', 'scout', 'socialite', 'telescope'),
         help='Additional packages to install.'
     )
 

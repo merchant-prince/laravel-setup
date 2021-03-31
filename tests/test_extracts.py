@@ -45,7 +45,7 @@ class ParserTestCase(TestCase):
         self.assertIsNone(arguments.__getattribute__('with'))
 
     def test_script_with_argument_accepts_several_choices(self) -> None:
-        choices = ['sanctum', 'scout', 'socialite']
+        choices = ['horizon', 'sanctum', 'scout', 'socialite', 'telescope']
 
         arguments: Namespace = self.argument_parser.parse_args(['setup', 'One', '--with', *choices])
 
