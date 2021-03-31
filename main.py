@@ -24,8 +24,8 @@ if __name__ == '__main__':
         'project.name': arguments.project_name,
         'project.domain': arguments.domain,
 
-        'services.nginx.ssl.certificate': 'certificate.pem',
-        'services.nginx.ssl.key': 'key.pem',
+        'services.nginx.ssl.certificate.name': 'certificate.pem',
+        'services.nginx.ssl.key.name': 'key.pem',
 
         'services.postgres.database': arguments.project_name.lower(),
         'services.postgres.username': 'username',
@@ -50,8 +50,8 @@ if __name__ == '__main__':
                         # utils.conf
                     },
                     'ssl': {
-                        # key.pem
-                        # certificate.pem
+                        # [ssl key]
+                        # [ssl certificate]
                     }
                 },
                 'supervisor': {
@@ -69,7 +69,7 @@ if __name__ == '__main__':
             },
             'application': {
                 'core': {
-                    # Laravel application
+                    # [laravel application]
                 }
             }
         }
@@ -78,8 +78,8 @@ if __name__ == '__main__':
     with cd(configuration['project.name']):
         with cd('configuration/nginx/ssl'):
             generate_self_signed_tls_certificate(
-                certificate_name=configuration['services.nginx.ssl.certificate'],
-                key_name=configuration['services.nginx.ssl.key'],
+                certificate_name=configuration['services.nginx.ssl.certificate.name'],
+                key_name=configuration['services.nginx.ssl.key.name'],
                 domain=configuration['project.domain']
             )
 
@@ -108,3 +108,15 @@ if __name__ == '__main__':
         Path('run').chmod(0o755)
 
         copyfile(template_path('.gitignore'), f'{Path.cwd()}/.gitignore')
+
+        with open('README.md', 'w') as file, open(f"{template_path('README.md')}") as template:
+            file.write(
+                Template(template.read()).substitute({
+                    'PROJECT_NAME': configuration['project.name'],
+                    'PROJECT_DOMAIN': configuration['project.domain'],
+                    'SSL_KEY_NAME': configuration['services.nginx.ssl.key.name'],
+                    'SSL_CERTIFICATE_NAME': configuration['services.nginx.ssl.certificate.name'],
+                    'ADMINER_PORT': configuration['services.adminer.port'],
+                    'MAILHOG_PORT': configuration['services.mailhog.port'],
+                })
+            )
