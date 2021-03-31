@@ -1,0 +1,90 @@
+version: "3.8"
+
+
+services:
+
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./configuration/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./configuration/nginx/ssl:/etc/nginx/ssl:ro
+      - ./application/core/${PROJECT_NAME}:/var/www/html:ro
+    ports:
+      - "80:80"
+      - "443:443"
+      - "${ADMINER_PORT}:8080"
+      - "${MAILHOG_PORT}:8025"
+    restart: always
+    depends_on:
+      - php
+      - adminer
+      - mailhog
+    networks:
+      - adminer
+      - mailhog
+      - nginx
+
+  php:
+    build:
+      context: ./docker-compose/services/php
+      args:
+        USER_ID: ${USER_ID}
+        GROUP_ID: ${GROUP_ID}
+    volumes:
+      - ./configuration/supervisor/conf.d/supervisord.conf:/etc/supervisor/conf.d/supervisord.conf:ro
+      - ./application/core/${PROJECT_NAME}:/var/www/html
+    restart: always
+    networks:
+      - nginx
+      - postgresql
+      - redis
+      - mailhog
+
+  postgresql:
+    image: postgres:latest
+    volumes:
+      - postgresql:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: "${POSTGRES_DB}"
+      POSTGRES_USER: "${POSTGRES_USER}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+    restart: always
+    networks:
+      - postgresql
+      - adminer
+
+  redis:
+    image: redis:latest
+    volumes:
+      - redis:/data
+    restart: always
+    networks:
+      - redis
+
+  adminer:
+    image: adminer:latest
+    depends_on:
+      - postgresql
+    restart: always
+    networks:
+      - adminer
+
+  mailhog:
+    image: mailhog/mailhog
+    restart: always
+    networks:
+      - mailhog
+
+
+networks:
+  nginx:
+  postgresql:
+  redis:
+  adminer:
+  mailhog:
+
+
+volumes:
+  postgresql:
+  redis:
+  adminer:
