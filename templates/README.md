@@ -72,3 +72,8 @@ The following services of the project are available at [${PROJECT_DOMAIN}](${PRO
 |               | 443             | Nginx HTTPS service (serve content)        |
 | Adminer       | ${ADMINER_PORT} | Adminer service (DB viewer)                |
 | Mailhog       | ${MAILHOG_PORT} | Mail service (viewer / debugger)           |
+
+
+## Modules installed
+
+Horizon, Telescope

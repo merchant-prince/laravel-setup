@@ -78,7 +78,7 @@ def parser() -> ArgumentParser:
     setup_subparser.add_argument(
         '--with',
         nargs='*',
-        choices=('everything', 'horizon', 'sanctum', 'scout', 'socialite', 'telescope'),
+        choices=('sanctum', 'scout', 'socialite'),
         help='Additional packages to install.'
     )
     setup_subparser.add_argument(
