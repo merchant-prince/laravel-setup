@@ -148,3 +148,6 @@ if __name__ == '__main__':
                     template_path('configuration/supervisor/conf.d/supervisord.conf'),
                     f'{Path.cwd()}/supervisord.conf'
                 )
+
+        with cd('docker-compose/services/php'):
+            copyfile(template_path('docker-compose/services/php/Dockerfile'), f'{Path.cwd()}/Dockerfile')
