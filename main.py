@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from os import getuid, getgid
+from pathlib import Path
 from string import Template
 from typing import Mapping, Union
 
@@ -31,6 +32,8 @@ if __name__ == '__main__':
 
         'services.adminer.port': 8080,
         'services.mailhog.port': 8025,
+
+        'miscellaneous.node.image.tag': 'stretch',
     }
 
     scaffold_project_directory_structure({
@@ -92,3 +95,13 @@ if __name__ == '__main__':
                     'MAILHOG_PORT': configuration['services.mailhog.port'],
                 })
             )
+
+        with open('run', 'w') as file, open(f"{template_path('run')}") as template:
+            file.write(
+                Template(template.read()).substitute({
+                    'PROJECT_NAME': configuration['project.name'],
+                    'NODE_IMAGE_TAG': configuration['miscellaneous.node.image.tag'],
+                })
+            )
+
+        Path('run').chmod(0o755)
