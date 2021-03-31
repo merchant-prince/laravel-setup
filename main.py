@@ -120,3 +120,25 @@ if __name__ == '__main__':
                     'MAILHOG_PORT': configuration['services.mailhog.port'],
                 })
             )
+
+        with cd('configuration'):
+            with cd('nginx/conf.d'):
+                with open('default.conf', 'w') as file, \
+                        open(f"{template_path('configuration/nginx/conf.d/default.conf')}") as template:
+                    file.write(
+                        Template(template.read()).substitute({
+                            'PROJECT_DOMAIN': configuration['project.domain'],
+                            'SSL_KEY_NAME': configuration['services.nginx.ssl.key.name'],
+                            'SSL_CERTIFICATE_NAME': configuration['services.nginx.ssl.certificate.name'],
+                        })
+                    )
+
+                with open('utils.conf', 'w') as file, \
+                        open(f"{template_path('configuration/nginx/conf.d/utils.conf')}") as template:
+                    file.write(
+                        Template(template.read()).substitute({
+                            'PROJECT_DOMAIN': configuration['project.domain'],
+                            'ADMINER_PORT': configuration['services.adminer.port'],
+                            'MAILHOG_PORT': configuration['services.mailhog.port'],
+                        })
+                    )
