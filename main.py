@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 
+from os import getuid, getgid, getcwd
+from subprocess import run
 from typing import Mapping, Union
 
-from modules.extracts import generate_configuration_files, parser, preliminary_checks, \
-    pull_laravel, scaffold_directory_structure, validate_script_arguments
+import modules.git as git
+from modules.extracts import generate_configuration_files, parser, preliminary_checks, scaffold_directory_structure, \
+    validate_script_arguments
+from modules.utilities import cd
 
 if __name__ == '__main__':
     preliminary_checks(requirements={
@@ -70,6 +74,30 @@ if __name__ == '__main__':
         }
     })
 
-    generate_configuration_files(configuration)
+    with cd(configuration['project.name']):
+        generate_configuration_files(configuration)
 
-    pull_laravel(configuration['project.name'])
+        with cd('application/core'):
+            run(
+                (
+                    'docker', 'run',
+                    '--rm',
+                    '--interactive',
+                    '--tty',
+                    '--user',
+                    f'{getuid()}:{getgid()}',
+                    '--mount', f'type=bind,source={getcwd()},target=/application',
+                    '--workdir', '/application',
+                    'composer', 'create-project',
+                    '--prefer-dist',
+                    '--ignore-platform-reqs',
+                    'laravel/laravel', configuration['project.name']
+                ),
+                check=True
+            )
+
+            with cd(configuration['project.name']):
+                git.init()
+                git.add(('.',))
+                git.commit('initial commit')
+                git.checkout_to_new_branch('development')

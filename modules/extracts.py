@@ -3,11 +3,10 @@ This module contains code extracted from other scripts (mostly main.py)
 """
 
 from argparse import ArgumentParser, Namespace
-from os import getuid, getgid, getcwd
+from os import getuid, getgid
 from pathlib import Path
 from shutil import copyfile
 from string import Template
-from subprocess import run
 from typing import Any, Mapping, Union
 
 from modules.scaffolding import directory_structure_is_valid, create_directory_structure, \
@@ -113,100 +112,78 @@ def scaffold_directory_structure(directory_structure: Mapping[str, Any]) -> None
 
 
 def generate_configuration_files(configuration: Mapping[str, Union[str, int]]) -> None:
-    with cd(configuration['project.name']):
-        with cd('configuration/nginx/ssl'):
-            generate_self_signed_tls_certificate(
-                certificate_name=configuration['services.nginx.ssl.certificate.name'],
-                key_name=configuration['services.nginx.ssl.key.name'],
-                domain=configuration['project.domain']
-            )
+    with cd('configuration/nginx/ssl'):
+        generate_self_signed_tls_certificate(
+            certificate_name=configuration['services.nginx.ssl.certificate.name'],
+            key_name=configuration['services.nginx.ssl.key.name'],
+            domain=configuration['project.domain']
+        )
 
-        with open('docker-compose.yml', 'w') as file, open(f"{template_path('docker-compose.yml')}") as template:
-            file.write(
-                Template(template.read()).substitute({
-                    'PROJECT_NAME': configuration['project.name'],
-                    'USER_ID': getuid(),
-                    'GROUP_ID': getgid(),
-                    'POSTGRES_DB': configuration['services.postgres.database'],
-                    'POSTGRES_USER': configuration['services.postgres.username'],
-                    'POSTGRES_PASSWORD': configuration['services.postgres.password'],
-                    'ADMINER_PORT': configuration['services.adminer.port'],
-                    'MAILHOG_PORT': configuration['services.mailhog.port'],
-                })
-            )
+    with open('docker-compose.yml', 'w') as file, open(f"{template_path('docker-compose.yml')}") as template:
+        file.write(
+            Template(template.read()).substitute({
+                'PROJECT_NAME': configuration['project.name'],
+                'USER_ID': getuid(),
+                'GROUP_ID': getgid(),
+                'POSTGRES_DB': configuration['services.postgres.database'],
+                'POSTGRES_USER': configuration['services.postgres.username'],
+                'POSTGRES_PASSWORD': configuration['services.postgres.password'],
+                'ADMINER_PORT': configuration['services.adminer.port'],
+                'MAILHOG_PORT': configuration['services.mailhog.port'],
+            })
+        )
 
-        with open('run', 'w') as file, open(f"{template_path('run')}") as template:
-            file.write(
-                Template(template.read()).substitute({
-                    'PROJECT_NAME': configuration['project.name'],
-                    'NODE_IMAGE_TAG': configuration['miscellaneous.node.image.tag'],
-                })
-            )
+    with open('run', 'w') as file, open(f"{template_path('run')}") as template:
+        file.write(
+            Template(template.read()).substitute({
+                'PROJECT_NAME': configuration['project.name'],
+                'NODE_IMAGE_TAG': configuration['miscellaneous.node.image.tag'],
+            })
+        )
 
-        Path('run').chmod(0o755)
+    Path('run').chmod(0o755)
 
-        copyfile(template_path('.gitignore'), f'{Path.cwd()}/.gitignore')
+    copyfile(template_path('.gitignore'), f'{Path.cwd()}/.gitignore')
 
-        with open('README.md', 'w') as file, open(f"{template_path('README.md')}") as template:
-            file.write(
-                Template(template.read()).substitute({
-                    'PROJECT_NAME': configuration['project.name'],
-                    'PROJECT_DOMAIN': configuration['project.domain'],
-                    'SSL_KEY_NAME': configuration['services.nginx.ssl.key.name'],
-                    'SSL_CERTIFICATE_NAME': configuration['services.nginx.ssl.certificate.name'],
-                    'ADMINER_PORT': configuration['services.adminer.port'],
-                    'MAILHOG_PORT': configuration['services.mailhog.port'],
-                })
-            )
+    with open('README.md', 'w') as file, open(f"{template_path('README.md')}") as template:
+        file.write(
+            Template(template.read()).substitute({
+                'PROJECT_NAME': configuration['project.name'],
+                'PROJECT_DOMAIN': configuration['project.domain'],
+                'SSL_KEY_NAME': configuration['services.nginx.ssl.key.name'],
+                'SSL_CERTIFICATE_NAME': configuration['services.nginx.ssl.certificate.name'],
+                'ADMINER_PORT': configuration['services.adminer.port'],
+                'MAILHOG_PORT': configuration['services.mailhog.port'],
+            })
+        )
 
-        with cd('configuration'):
-            with cd('nginx/conf.d'):
-                with open('default.conf', 'w') as file, \
-                        open(f"{template_path('configuration/nginx/conf.d/default.conf')}") as template:
-                    file.write(
-                        Template(template.read()).substitute({
-                            'PROJECT_DOMAIN': configuration['project.domain'],
-                            'SSL_KEY_NAME': configuration['services.nginx.ssl.key.name'],
-                            'SSL_CERTIFICATE_NAME': configuration['services.nginx.ssl.certificate.name'],
-                        })
-                    )
-
-                with open('utils.conf', 'w') as file, \
-                        open(f"{template_path('configuration/nginx/conf.d/utils.conf')}") as template:
-                    file.write(
-                        Template(template.read()).substitute({
-                            'PROJECT_DOMAIN': configuration['project.domain'],
-                            'ADMINER_PORT': configuration['services.adminer.port'],
-                            'MAILHOG_PORT': configuration['services.mailhog.port'],
-                        })
-                    )
-
-            with cd('supervisor/conf.d'):
-                copyfile(
-                    template_path('configuration/supervisor/conf.d/supervisord.conf'),
-                    f'{Path.cwd()}/supervisord.conf'
+    with cd('configuration'):
+        with cd('nginx/conf.d'):
+            with open('default.conf', 'w') as file, \
+                    open(f"{template_path('configuration/nginx/conf.d/default.conf')}") as template:
+                file.write(
+                    Template(template.read()).substitute({
+                        'PROJECT_DOMAIN': configuration['project.domain'],
+                        'SSL_KEY_NAME': configuration['services.nginx.ssl.key.name'],
+                        'SSL_CERTIFICATE_NAME': configuration['services.nginx.ssl.certificate.name'],
+                    })
                 )
 
-        with cd('docker-compose/services/php'):
-            copyfile(template_path('docker-compose/services/php/Dockerfile'), f'{Path.cwd()}/Dockerfile')
+            with open('utils.conf', 'w') as file, \
+                    open(f"{template_path('configuration/nginx/conf.d/utils.conf')}") as template:
+                file.write(
+                    Template(template.read()).substitute({
+                        'PROJECT_DOMAIN': configuration['project.domain'],
+                        'ADMINER_PORT': configuration['services.adminer.port'],
+                        'MAILHOG_PORT': configuration['services.mailhog.port'],
+                    })
+                )
 
+        with cd('supervisor/conf.d'):
+            copyfile(
+                template_path('configuration/supervisor/conf.d/supervisord.conf'),
+                f'{Path.cwd()}/supervisord.conf'
+            )
 
-def pull_laravel(project_name: str) -> None:
-    with cd(f'{project_name}/application/core'):
-        run(
-            (
-                'docker', 'run',
-                '--rm',
-                '--interactive',
-                '--tty',
-                '--user',
-                f'{getuid()}:{getgid()}',
-                '--mount', f'type=bind,source={getcwd()},target=/application',
-                '--workdir', '/application',
-                'composer', 'create-project',
-                '--prefer-dist',
-                '--ignore-platform-reqs',
-                'laravel/laravel', project_name
-            ),
-            check=True
-        )
+    with cd('docker-compose/services/php'):
+        copyfile(template_path('docker-compose/services/php/Dockerfile'), f'{Path.cwd()}/Dockerfile')
