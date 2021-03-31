@@ -48,13 +48,13 @@ def parser() -> ArgumentParser:
     Returns:
         The customized ArgumentParser object.
     """
-    parser_: ArgumentParser = ArgumentParser(
+    main_parser: ArgumentParser = ArgumentParser(
         prog='laravel',
         description='A script to scaffold laravel projects.',
         allow_abbrev=False
     )
 
-    setup: ArgumentParser = parser_.add_subparsers(
+    setup_subparser: ArgumentParser = main_parser.add_subparsers(
         title='Action',
         description='The action to take.',
         dest='action',
@@ -66,28 +66,28 @@ def parser() -> ArgumentParser:
         allow_abbrev=False
     )
 
-    setup.add_argument(
+    setup_subparser.add_argument(
         'project_name',
         help='The name of the laravel project to scaffold.'
     )
-    setup.add_argument(
+    setup_subparser.add_argument(
         '--domain',
         default='application.local',
         help='The domain name where the project will be hosted.'
     )
-    setup.add_argument(
+    setup_subparser.add_argument(
         '--with',
         nargs='*',
         choices=('everything', 'horizon', 'sanctum', 'scout', 'socialite', 'telescope'),
         help='Additional packages to install.'
     )
-    setup.add_argument(
+    setup_subparser.add_argument(
         '--development',
         action='store_true',
         help='Install the development version of laravel.'
     )
 
-    return parser_
+    return main_parser
 
 
 def validate_script_arguments(arguments: Namespace) -> None:
