@@ -60,19 +60,19 @@ class DomainTestCase(TestCase):
 
 class CorrectVersionIsInstalledTestCase(TestCase):
     @staticmethod
-    def docker_version_command() -> Tuple[str, ...]:
+    def docker_version_command() -> Tuple[str, str, str, str]:
         return 'docker', 'version', '--format', '{{.Server.Version}}'
 
     @staticmethod
-    def docker_compose_version_command() -> Tuple[str, ...]:
+    def docker_compose_version_command() -> Tuple[str, str, str]:
         return 'docker-compose', 'version', '--short'
 
     @staticmethod
-    def openssl_version_command() -> Tuple[str, ...]:
+    def openssl_version_command() -> Tuple[str, str]:
         return 'openssl', 'version'
 
     @staticmethod
-    def git_version_command() -> Tuple[str, ...]:
+    def git_version_command() -> Tuple[str, str]:
         return 'git', 'version'
 
     @staticmethod
