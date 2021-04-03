@@ -6,13 +6,13 @@ from tempfile import TemporaryDirectory
 @contextmanager
 def tmpdir() -> None:
     """
-    A context manager to go into a temporary directory.
+    A context manager to create a temporary directory, and cd into it.
     """
-    with TemporaryDirectory() as temporary_directory:
-        current_working_directory = getcwd()
+    current_working_directory = getcwd()
 
+    with TemporaryDirectory() as temporary_directory:
         try:
-            chdir(temporary_directory.name)
+            chdir(temporary_directory)
             yield
         finally:
             chdir(current_working_directory)
