@@ -11,13 +11,13 @@ def cd(destination: str) -> None:
     Args:
         destination (str): The directory to cd into.
     """
-    cwd = getcwd()
+    current_working_directory = getcwd()
 
     try:
         chdir(destination)
         yield
     finally:
-        chdir(cwd)
+        chdir(current_working_directory)
 
 
 def template_path(path: str) -> Path:
