@@ -2,17 +2,19 @@
 This module contains code extracted from other scripts (mostly main.py)
 """
 
+from fileinput import input
 from os import getuid, getgid, getcwd
 from pathlib import Path
+from re import compile
 from shutil import copyfile
 from string import Template
 from subprocess import run
-from typing import Mapping
+from typing import Mapping, Union
 
 from modules.configuration import ConfigurationAccessorType
 from modules.configuration import create_argument_parser, validated_script_arguments, create_configuration_accessor
 from modules.generators import setup_directory_structure, generate_self_signed_tls_certificate
-from modules.utilities import cd, template_path
+from modules.utilities import cd, migrate_database, start_stack, template_path
 from modules.verification import correct_version_is_installed
 
 
@@ -176,3 +178,52 @@ def takeoff(configuration: ConfigurationAccessorType) -> None:
         run(('git', 'add', '*'), check=True)
         run(('git', 'commit', '--message', 'initial commit'), check=True)
         run(('git', 'checkout', '-b', 'development'), check=True)
+
+
+def orbital_checkout(configuration: ConfigurationAccessorType) -> None:
+    environment: Mapping[str, Union[str, int]] = {
+        'APP_NAME': configuration('project.name'),
+        'APP_URL': f"https://{configuration('project.domain')}",
+
+        'DB_CONNECTION': 'pgsql',
+        'DB_HOST': 'postgresql',
+        'DB_PORT': 5432,
+        'DB_DATABASE': configuration('services.postgres.database'),
+        'DB_USERNAME': configuration('services.postgres.username'),
+        'DB_PASSWORD': configuration('services.postgres.password'),
+
+        'CACHE_DRIVER': 'redis',
+        'SESSION_DRIVER': 'redis',
+        'QUEUE_CONNECTION': 'redis',
+
+        'REDIS_HOST': 'redis',
+        'REDIS_PORT': 6379,
+
+        'MAIL_HOST': 'mailhog',
+        'MAIL_PORT': 1025,
+        'MAIL_FROM_NAME': configuration('project.name').lower(),
+        'MAIL_FROM_ADDRESS': f"{configuration('project.name').lower()}@{configuration('project.domain')}"
+    }
+
+    with cd(f"{configuration('project.name')}/application/core/{configuration('project.name')}"):
+        for environment_file in ['.env', '.env.example']:
+            with input(environment_file, inplace=True) as file:
+                environment_regex = compile(r'^(?P<key>\w+)=(?P<value>.*?)?\s*$')
+
+                for line in file:
+                    line = line.strip()
+                    matches = environment_regex.match(line)
+
+                    if matches is not None:
+                        matches = matches.groupdict()
+                        line = (f"{matches['key']}="
+                                f"{environment[matches['key']] if matches['key'] in environment else matches['value']}")
+
+                    print(line)
+
+        run(('git', 'add', '*'), check=True)
+        run(('git', 'commit', '--message', 'set environment variables for the project.'), check=True)
+
+    with cd(configuration('project.name')):
+        with start_stack():
+            migrate_database()

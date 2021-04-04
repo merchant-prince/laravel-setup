@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
 from modules.configuration import ConfigurationAccessorType
-from modules.extracts import configure, countdown, ignition, main_engine_start, preflight_checks, takeoff
+from modules.extracts import configure, countdown, ignition, main_engine_start, orbital_checkout, preflight_checks, \
+    takeoff
 
 if __name__ == '__main__':
     preflight_checks()
@@ -15,3 +16,5 @@ if __name__ == '__main__':
     countdown(configuration)
 
     takeoff(configuration)
+
+    orbital_checkout(configuration)

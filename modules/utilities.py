@@ -1,6 +1,7 @@
 from contextlib import contextmanager
 from os import chdir, getcwd
 from pathlib import Path
+from subprocess import run
 
 
 @contextmanager
@@ -18,6 +19,27 @@ def cd(destination: str) -> None:
         yield
     finally:
         chdir(current_working_directory)
+
+
+@contextmanager
+def start_stack() -> None:
+    """
+    A context manager to start and stop the application's stack using docker-compose.
+    """
+
+    try:
+        run(('docker-compose', 'up', '-d'), check=True)
+        yield
+    finally:
+        run(('docker-compose', 'down'), check=True)
+
+
+def migrate_database() -> None:
+    """
+    Migrate the application's database.
+    """
+
+    run(('./run', 'artisan', 'migrate:fresh'), check=True)
 
 
 def template_path(path: str) -> Path:
