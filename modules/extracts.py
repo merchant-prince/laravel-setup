@@ -14,6 +14,7 @@ from typing import Mapping, Union
 from modules.configuration import ConfigurationAccessorType
 from modules.configuration import create_argument_parser, validated_script_arguments, create_configuration_accessor
 from modules.generators import setup_directory_structure, generate_self_signed_tls_certificate
+from modules.packages import setup_horizon, setup_sanctum, setup_scout, setup_socialite, setup_telescope
 from modules.utilities import cd, migrate_database, start_stack, template_path
 from modules.verification import correct_version_is_installed
 
@@ -227,3 +228,11 @@ def orbital_checkout(configuration: ConfigurationAccessorType) -> None:
     with cd(configuration('project.name')):
         with start_stack():
             migrate_database()
+
+
+def to_infinity(configuration: ConfigurationAccessorType) -> None:
+    setup_horizon(configuration)
+    setup_sanctum()
+    setup_socialite()
+    setup_scout()
+    setup_telescope()

@@ -2,7 +2,7 @@
 
 from modules.configuration import ConfigurationAccessorType
 from modules.extracts import configure, countdown, ignition, main_engine_start, orbital_checkout, preflight_checks, \
-    takeoff
+    takeoff, to_infinity
 
 if __name__ == '__main__':
     preflight_checks()
@@ -18,3 +18,5 @@ if __name__ == '__main__':
     takeoff(configuration)
 
     orbital_checkout(configuration)
+
+    to_infinity(configuration)
