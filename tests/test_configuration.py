@@ -86,11 +86,11 @@ class ValidatedScriptArgumentsTestCase(TestCase):
     def test_returns_project_name_domain_and_modules(self) -> None:
         project_name: str = 'ProjectName'
         domain: str = 'domain.tld'
-        modules: List = ['one', 'two', 'three']
+        packages: List = ['one', 'two', 'three']
 
         self.script_arguments.__setattr__('project_name', project_name)
         self.script_arguments.__setattr__('domain', domain)
-        self.script_arguments.__setattr__('with', modules)
+        self.script_arguments.__setattr__('with', packages)
 
         result: Mapping[str, Union[str, List]] = validated_script_arguments(self.script_arguments)
 
@@ -98,7 +98,7 @@ class ValidatedScriptArgumentsTestCase(TestCase):
             {
                 'project_name': project_name,
                 'project_domain': domain,
-                'project_modules': modules,
+                'project_packages': packages,
             },
             dict(result)
         )
@@ -109,13 +109,13 @@ class CreateConfigurationAccessorTestCase(TestCase):
         self.script_arguments: Mapping[str, Union[str, List]] = {
             'project_name': 'ProjectName',
             'project_domain': 'project-domain.tld',
-            'project_modules': ['one', 'two', 'three'],
+            'project_packages': ['one', 'two', 'three'],
         }
         self.configuration: ConfigurationAccessorType = create_configuration_accessor(**self.script_arguments)
 
     def test_configuration_accessor_returns_the_appropriate_values_when_queried(self) -> None:
         self.assertEqual(self.configuration('project.name'), self.script_arguments['project_name'])
         self.assertEqual(self.configuration('project.domain'), self.script_arguments['project_domain'])
-        self.assertListEqual(self.configuration('project.modules'), self.script_arguments['project_modules'])
+        self.assertListEqual(self.configuration('project.packages'), self.script_arguments['project_packages'])
         self.assertEqual(self.configuration('services.postgres.database'),
                          self.script_arguments['project_name'].lower())

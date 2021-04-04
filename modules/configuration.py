@@ -56,7 +56,7 @@ def validated_script_arguments(script_arguments: Namespace) -> Mapping[str, Unio
     return {
         'project_name': script_arguments.project_name,
         'project_domain': script_arguments.domain,
-        'project_modules': script_arguments.__getattribute__('with') or [],
+        'project_packages': script_arguments.__getattribute__('with') or [],
     }
 
 
@@ -65,11 +65,11 @@ ConfigurationAccessorType = Callable[[str], ConfigurationType]
 
 
 def create_configuration_accessor(project_name: str, project_domain: str,
-                                  project_modules: List) -> ConfigurationAccessorType:
+                                  project_packages: List) -> ConfigurationAccessorType:
     configuration: Mapping[str, ConfigurationType] = {
         'project.name': project_name,
         'project.domain': project_domain,
-        'project.modules': project_modules,
+        'project.packages': project_packages,
 
         'services.nginx.ssl.certificate.name': 'certificate.pem',
         'services.nginx.ssl.key.name': 'key.pem',
