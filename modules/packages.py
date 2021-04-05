@@ -42,26 +42,26 @@ def setup_telescope(configuration: ConfigurationAccessorType):
             run(('./run', 'artisan', 'telescope:install'), check=True)
             migrate_database()
 
-        with cd(f"application/{configuration('project.name')}"):
+        with cd(f"application/core/{configuration('project.name')}"):
             with cd('app/Providers'):
                 with open('TelescopeServiceProvider.php', 'r+') as file:
                     file_contents = file.read()
                     file.seek(0)
                     method_regex = compile(r' *' + escape('public function register()'))
                     new_file_contents = method_regex.sub('''\
-        public function register()
-        {
-            if ($this->app->isLocal()) {
-                $this->app->register(\\\\Laravel\\\\Telescope\\\\TelescopeServiceProvider::class);
-                $this->registerTelescope();
-            }
+    public function register()
+    {
+        if ($this->app->isLocal()) {
+            $this->app->register(\\\\Laravel\\\\Telescope\\\\TelescopeServiceProvider::class);
+            $this->registerTelescope();
         }
-        /**
-         * Register telescope services.
-         *
-         * @return void
-         */
-        protected function registerTelescope()\
+    }
+    /**
+     * Register telescope services.
+     *
+     * @return void
+     */
+    protected function registerTelescope()\
 ''', file_contents)
 
                     file.write(new_file_contents)
@@ -72,10 +72,10 @@ def setup_telescope(configuration: ConfigurationAccessorType):
                 file.seek(0)
                 method_regex = compile(r' *' + escape('"dont-discover": []') + r'\n')
                 new_file_contents = method_regex.sub('''\
-                    "dont-discover": [
-                        "laravel/telescope"
-                    ]
-        ''', file_contents)
+            "dont-discover": [
+                "laravel/telescope"
+            ]
+''', file_contents)
 
                 file.write(new_file_contents)
                 file.truncate()
