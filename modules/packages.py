@@ -35,17 +35,51 @@ def setup_horizon(configuration: ConfigurationAccessorType):
                 supervisord_configuration.write(f'\n{horizon_configuration.read()}')
 
 
-def setup_sanctum():
-    pass
+def setup_telescope(configuration: ConfigurationAccessorType):
+    with cd(configuration('project.name')):
+        with start_stack():
+            run(('./run', 'composer', 'require', 'laravel/telescope', '--dev'), check=True)
+            run(('./run', 'artisan', 'telescope:install'), check=True)
+            migrate_database()
 
+        with cd(f"application/{configuration('project.name')}"):
+            with cd('app/Providers'):
+                with open('TelescopeServiceProvider.php', 'r+') as file:
+                    file_contents = file.read()
+                    file.seek(0)
+                    method_regex = compile(r' *' + escape('public function register()'))
+                    new_file_contents = method_regex.sub('''\
+        public function register()
+        {
+            if ($this->app->isLocal()) {
+                $this->app->register(\\\\Laravel\\\\Telescope\\\\TelescopeServiceProvider::class);
+                $this->registerTelescope();
+            }
+        }
+        /**
+         * Register telescope services.
+         *
+         * @return void
+         */
+        protected function registerTelescope()\
+''', file_contents)
 
-def setup_scout():
-    pass
+                    file.write(new_file_contents)
+                    file.truncate()
 
+            with open('composer.json', 'r+') as file:
+                file_contents = file.read()
+                file.seek(0)
+                method_regex = compile(r' *' + escape('"dont-discover": []') + r'\n')
+                new_file_contents = method_regex.sub('''\
+                    "dont-discover": [
+                        "laravel/telescope"
+                    ]
+        ''', file_contents)
 
-def setup_socialite():
-    pass
+                file.write(new_file_contents)
+                file.truncate()
 
-
-def setup_telescope():
-    pass
+        with cd(f"application/core/{configuration('project.name')}"):
+            run(('git', 'add', '*'), check=True)
+            run(('git', 'commit', '--message', 'scaffold laravel/telescope package.'), check=True)
