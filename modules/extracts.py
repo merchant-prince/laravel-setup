@@ -1,7 +1,3 @@
-"""
-This module contains code extracted from other scripts (mostly main.py)
-"""
-
 from fileinput import input
 from os import getuid, getgid, getcwd
 from pathlib import Path

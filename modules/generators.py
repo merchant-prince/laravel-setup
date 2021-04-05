@@ -38,6 +38,5 @@ def generate_self_signed_tls_certificate(domain: str, certificate_name: str, key
             '-subj', f'/CN={domain}',
             '-addext', f'subjectAltName=DNS:{domain}',
         ),
-        capture_output=True,
         check=True
     )

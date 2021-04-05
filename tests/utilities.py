@@ -6,7 +6,7 @@ from tempfile import TemporaryDirectory
 @contextmanager
 def tmpdir() -> None:
     """
-    A context manager to create a temporary directory, and cd into it.
+    A context manager to create a temporary directory and cd into it.
     """
     current_working_directory = getcwd()
 

@@ -1,7 +1,3 @@
-"""
-This module contains validation rules used throughout the project.
-"""
-
 from pathlib import Path
 from re import compile, IGNORECASE, Pattern
 from subprocess import run

@@ -26,7 +26,6 @@ def start_stack() -> None:
     """
     A context manager to start and stop the application's stack using docker-compose.
     """
-
     try:
         run(('docker-compose', 'up', '-d'), check=True)
         yield
@@ -38,7 +37,6 @@ def migrate_database() -> None:
     """
     Migrate the application's database.
     """
-
     run(('./run', 'artisan', 'migrate:fresh'), check=True)
 
 

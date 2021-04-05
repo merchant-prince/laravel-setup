@@ -41,7 +41,7 @@ ${PROJECT_NAME}                         <--- Root project directory
 
 The project is **started** using ```docker-compose``` in the *root project directory*.
 
-```shell script
+```shell
 $$ docker-compose up
 ```
 
@@ -50,7 +50,7 @@ $$ docker-compose up
 
 To run **artisan**, **yarn**, or **composer** commands in the project, use the ```run``` script provided in the root directory of the project.
 
-```shell script
+```shell
 # artisan
 $$ ./run artisan <COMMAND>
 
