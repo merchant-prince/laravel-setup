@@ -10,7 +10,7 @@ from typing import Mapping, Union
 from modules.configuration import ConfigurationAccessorType
 from modules.configuration import create_argument_parser, validated_script_arguments, create_configuration_accessor
 from modules.generators import setup_directory_structure, generate_self_signed_tls_certificate
-from modules.packages import setup_horizon, setup_telescope
+from modules.packages import setup_breeze_with_inertia, setup_horizon, setup_telescope
 from modules.utilities import cd, migrate_database, start_stack, template_path
 from modules.verification import correct_version_is_installed
 
@@ -227,6 +227,9 @@ def orbital_checkout(configuration: ConfigurationAccessorType) -> None:
 
 
 def to_infinity(configuration: ConfigurationAccessorType) -> None:
+    if 'breeze.inertia' in configuration('project.packages'):
+        setup_breeze_with_inertia(configuration)
+
     if 'horizon' in configuration('project.packages'):
         setup_horizon(configuration)
 

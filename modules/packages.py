@@ -5,7 +5,22 @@ from modules.configuration import ConfigurationAccessorType
 from modules.utilities import cd, migrate_database, start_stack, template_path
 
 
-def setup_horizon(configuration: ConfigurationAccessorType):
+def setup_breeze_with_inertia(configuration: ConfigurationAccessorType) -> None:
+    with cd(configuration('project.name')):
+        with start_stack():
+            run(('./run', 'composer', 'require', 'laravel/breeze', '--dev'), check=True)
+            run(('./run', 'artisan', 'breeze:install', '--inertia'), check=True)
+            run(('./run', 'yarn', 'install'), check=True)
+            run(('./run', 'yarn', 'run', 'dev'), check=True)
+
+            migrate_database()
+
+        with cd(f"application/core/{configuration('project.name')}"):
+            run(('git', 'add', '*'), check=True)
+            run(('git', 'commit', '--message', 'scaffold laravel/breeze package with inertia.'), check=True)
+
+
+def setup_horizon(configuration: ConfigurationAccessorType) -> None:
     with cd(configuration('project.name')):
         with start_stack():
             run(('./run', 'composer', 'require', 'laravel/horizon'), check=True)
@@ -35,7 +50,7 @@ def setup_horizon(configuration: ConfigurationAccessorType):
                 supervisord_configuration.write(f'\n{horizon_configuration.read()}')
 
 
-def setup_telescope(configuration: ConfigurationAccessorType):
+def setup_telescope(configuration: ConfigurationAccessorType) -> None:
     with cd(configuration('project.name')):
         with start_stack():
             run(('./run', 'composer', 'require', 'laravel/telescope', '--dev'), check=True)
