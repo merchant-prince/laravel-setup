@@ -14,7 +14,7 @@ RUN apt-get update \
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
 # Setup php.ini file
-RUN cp "$${PHP_INI_DIR}/php.ini-development" "$${PHP_INI_DIR}/php.ini"
+RUN cp "${PHP_INI_DIR}/php.ini-development" "${PHP_INI_DIR}/php.ini"
 
 # Change the UID and GID of the www-data so that there are no permission conflicts on the files created and/or
 # manipulated by the container.
@@ -26,15 +26,15 @@ RUN userdel -f www-data && \
     if getent group www-data; then \
       groupdel www-data; \
     fi && \
-    groupadd -g $${GROUP_ID} www-data && \
-    useradd -l -u $${USER_ID} -g www-data www-data && \
+    groupadd -g ${GROUP_ID} www-data && \
+    useradd -l -u ${USER_ID} -g www-data www-data && \
     install -d -m 0755 -o www-data -g www-data /home/www-data && \
     chown --changes \
           --silent \
           --no-dereference \
           --recursive \
           --from=33:33 \
-          $${USER_ID}:$${GROUP_ID} \
+          ${USER_ID}:${GROUP_ID} \
           /home/www-data
 
 # Setup cron & associated logging
