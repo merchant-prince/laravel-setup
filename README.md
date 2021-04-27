@@ -39,7 +39,7 @@ $ git clone https://github.com/merchant-prince/laravel-setup.git
 To use the script, you need to call the laravel-setup script with the appropriate arguments.
 
 ```shell
-$ ./bin/laravel-setup setup ProjectName [--domain DOMAIN] [--with [{horizon,telescope}]
+$ ./bin/laravel-setup setup ProjectName [--domain DOMAIN] [--with [{breeze, breeze.inertia, horizon, telescope}]
 ```
 
 
@@ -51,7 +51,7 @@ A bare-bones Laravel project can be set-up using the following command:
 $ ./bin/laravel-setup setup LeProject
 ```
 
-The above command will generate a project in the current working directory hosted at
+The above command will generate a project in the current working directory, and will be hosted at
 [https://application.local](https://application.local).
 
 
@@ -93,13 +93,14 @@ $ ./bin/laravel-setup setup MyProject --with breeze|breeze.inertia horizon teles
 
 
 ## SSL
+
 The SSL certificates  are generated using [minica](https://github.com/jsha/minica).
 After generating the first Laravel project using this script, a new **root CA certificate pair** will be generated at
 ```./tools/ssl```. You need to import the certificate (```minica.pem```) into your browsers' *Certificate Authorities*
 section.
 
-If you ever delete the generated certificate pair, the next time you generate a new project, you will need to re-import
-the **root CA certificate** into your browser again.
+If you ever delete the generated certificate pair, the next time you generate a new project, you will need to import the
+new **root CA certificate** into your browser.
 
 
 ## Further Information
