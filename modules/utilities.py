@@ -2,6 +2,7 @@ from contextlib import contextmanager
 from os import chdir, getcwd
 from pathlib import Path
 from subprocess import run
+from tempfile import TemporaryDirectory
 
 
 @contextmanager
@@ -19,6 +20,21 @@ def cd(destination: str) -> None:
         yield
     finally:
         chdir(current_working_directory)
+
+
+@contextmanager
+def tmpdir() -> None:
+    """
+    A context manager to create a temporary directory and cd into it.
+    """
+    current_working_directory = getcwd()
+
+    with TemporaryDirectory() as temporary_directory:
+        try:
+            chdir(temporary_directory)
+            yield
+        finally:
+            chdir(current_working_directory)
 
 
 @contextmanager
@@ -40,6 +56,19 @@ def migrate_database() -> None:
     run(('./run', 'artisan', 'migrate:fresh'), check=True)
 
 
+def project_path(path: str = '') -> Path:
+    """
+    Get a file's absolute path from a path relative to the root project directory.
+
+    Args:
+        path: File's path relative to the root project directory.
+
+    Returns:
+        A Path object pointing to the file.
+    """
+    return Path(f'{Path(__file__).parent.parent}/{path}')
+
+
 def template_path(path: str) -> Path:
     """
     Get a template's absolute path from a path relative to the 'templates' directory.
@@ -50,4 +79,4 @@ def template_path(path: str) -> Path:
     Returns:
         A Path object pointing to the template.
     """
-    return Path(f'{Path(__file__).parent.parent}/templates/{path}')
+    return project_path(f'templates/{path}')

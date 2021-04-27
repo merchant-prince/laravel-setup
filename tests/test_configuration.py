@@ -5,7 +5,7 @@ from unittest import TestCase
 
 from modules.configuration import ConfigurationAccessorType
 from modules.configuration import create_argument_parser, create_configuration_accessor, validated_script_arguments
-from tests.utilities import tmpdir
+from modules.utilities import tmpdir
 
 
 class ParserTestCase(TestCase):

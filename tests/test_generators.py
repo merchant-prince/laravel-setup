@@ -4,7 +4,7 @@ from typing import List
 from unittest import TestCase
 
 from modules.generators import generate_self_signed_tls_certificate, setup_directory_structure
-from tests.utilities import tmpdir
+from modules.utilities import tmpdir
 
 
 class CreateDirectoryStructureTestCase(TestCase):
