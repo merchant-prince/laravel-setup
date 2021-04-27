@@ -35,7 +35,7 @@ def create_argument_parser() -> ArgumentParser:
     setup_subparser.add_argument(
         '--with',
         nargs='*',
-        choices=('breeze.inertia', 'horizon', 'telescope'),
+        choices=('breeze', 'breeze.inertia', 'horizon', 'telescope'),
         help='Additional packages to install.'
     )
 

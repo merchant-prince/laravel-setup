@@ -1,15 +1,22 @@
 from re import compile, escape
 from subprocess import run
+from typing import Tuple
 
 from modules.configuration import ConfigurationAccessorType
 from modules.utilities import cd, migrate_database, start_stack, template_path
 
 
-def setup_breeze_with_inertia(configuration: ConfigurationAccessorType) -> None:
+def setup_breeze(configuration: ConfigurationAccessorType, *, inertia: bool = False) -> None:
     with cd(configuration('project.name')):
         with start_stack():
             run(('./run', 'composer', 'require', 'laravel/breeze', '--dev'), check=True)
-            run(('./run', 'artisan', 'breeze:install', '--inertia'), check=True)
+
+            installation_command: Tuple[str, ...] = ('./run', 'artisan', 'breeze:install')
+
+            if inertia:
+                installation_command += ('--inertia', )
+
+            run(installation_command, check=True)
             run(('./run', 'yarn', 'install'), check=True)
             run(('./run', 'yarn', 'run', 'dev'), check=True)
 
