@@ -3,20 +3,21 @@ from os import chdir, getcwd
 from pathlib import Path
 from subprocess import run
 from tempfile import TemporaryDirectory
+from typing import Union
 
 
 @contextmanager
-def cd(destination: str) -> None:
+def cd(destination: Union[str, Path]) -> None:
     """
     A context manager to change directory. Mimics unix's cd.
 
     Args:
-        destination (str): The directory to cd into.
+        destination (str|Path): The directory to cd into.
     """
     current_working_directory = getcwd()
 
     try:
-        chdir(destination)
+        chdir(str(destination))
         yield
     finally:
         chdir(current_working_directory)

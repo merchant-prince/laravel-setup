@@ -9,8 +9,8 @@ from typing import Mapping, Union
 
 from modules.configuration import ConfigurationAccessorType
 from modules.configuration import create_argument_parser, validated_script_arguments, create_configuration_accessor
-from modules.generators import setup_directory_structure, generate_self_signed_tls_certificate
 from modules.packages import setup_breeze, setup_horizon, setup_telescope
+from modules.ssl import Generator as SslGenerator
 from modules.utilities import cd, migrate_database, start_stack, template_path
 from modules.verification import correct_version_is_installed
 
@@ -68,11 +68,16 @@ def configure() -> ConfigurationAccessorType:
 def generate_configuration_files(configuration: ConfigurationAccessorType) -> None:
     with cd(configuration('project.name')):
         with cd('configuration/nginx/ssl'):
-            generate_self_signed_tls_certificate(
+            generator: SslGenerator = SslGenerator(
                 domain=configuration('project.domain'),
                 certificate_name=configuration('services.nginx.ssl.certificate.name'),
                 key_name=configuration('services.nginx.ssl.key.name')
             )
+
+            if not generator.binary_is_present():
+                generator.build_binary()
+
+            generator.generate()
 
         with open('docker-compose.yml', 'w') as file, open(f"{template_path('docker-compose.yml')}") as template:
             file.write(
@@ -152,8 +157,7 @@ def pull_fresh_laravel_project(configuration: ConfigurationAccessorType) -> None
                 '--rm',
                 '--interactive',
                 '--tty',
-                '--user',
-                f'{getuid()}:{getgid()}',
+                '--user', f'{getuid()}:{getgid()}',
                 '--mount', f'type=bind,source={getcwd()},target=/application',
                 '--workdir', '/application',
                 'composer', 'create-project',
