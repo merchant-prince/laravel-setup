@@ -14,9 +14,10 @@ def setup_breeze(configuration: ConfigurationAccessorType, *, inertia: bool = Fa
             installation_command: Tuple[str, ...] = ('./run', 'artisan', 'breeze:install')
 
             if inertia:
-                installation_command += ('--inertia', )
+                installation_command += ('--inertia',)
 
             run(installation_command, check=True)
+
             run(('./run', 'yarn', 'install'), check=True)
             run(('./run', 'yarn', 'run', 'dev'), check=True)
 
@@ -24,7 +25,8 @@ def setup_breeze(configuration: ConfigurationAccessorType, *, inertia: bool = Fa
 
         with cd(f"application/core/{configuration('project.name')}"):
             run(('git', 'add', '*'), check=True)
-            run(('git', 'commit', '--message', 'scaffold laravel/breeze package with inertia.'), check=True)
+            run(('git', 'commit', '--message', f'scaffold laravel/breeze package{" with inertia" if inertia else ""}.'),
+                check=True)
 
 
 def setup_horizon(configuration: ConfigurationAccessorType) -> None:

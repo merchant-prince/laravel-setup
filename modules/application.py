@@ -1,13 +1,10 @@
 from modules.configuration import ConfigurationAccessorType
 from modules.extracts import configure, pull_fresh_laravel_project, generate_configuration_files, \
-    configure_environment_variables, preflight_checks, initial_git_commit, setup_laravel_packages
+    configure_environment_variables, preflight_checks, initialize_git_repository, setup_laravel_packages
 from modules.generators import setup_directory_structure
 
 
 class Application:
-    """
-    This wrapper class's only purpose is to run the application.
-    """
     def __init__(self) -> None:
         print('Doing some preflight checks...')
         preflight_checks()
@@ -26,7 +23,7 @@ class Application:
         pull_fresh_laravel_project(self.__configuration)
 
         print('Initializing git for the laravel project...')
-        initial_git_commit(self.__configuration)
+        initialize_git_repository(self.__configuration)
 
         print('Rewriting environment variables for the laravel project...')
         configure_environment_variables(self.__configuration)

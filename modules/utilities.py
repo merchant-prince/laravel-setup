@@ -14,7 +14,7 @@ def cd(destination: Union[str, Path]) -> None:
     Args:
         destination (str|Path): The directory to cd into.
     """
-    current_working_directory = getcwd()
+    current_working_directory: str = getcwd()
 
     try:
         chdir(str(destination))
@@ -28,7 +28,7 @@ def tmpdir() -> None:
     """
     A context manager to create a temporary directory and cd into it.
     """
-    current_working_directory = getcwd()
+    current_working_directory: str = getcwd()
 
     with TemporaryDirectory() as temporary_directory:
         try:

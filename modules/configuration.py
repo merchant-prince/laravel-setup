@@ -3,6 +3,9 @@ from typing import Callable, Union, List, Mapping
 
 from modules.verification import is_pascal_case, directory_exists, domain_is_valid
 
+ConfigurationType = Union[str, int, List]
+ConfigurationAccessorType = Callable[[str], ConfigurationType]
+
 
 def create_argument_parser() -> ArgumentParser:
     main_parser: ArgumentParser = ArgumentParser(
@@ -58,10 +61,6 @@ def validated_script_arguments(script_arguments: Namespace) -> Mapping[str, Unio
         'project_domain': script_arguments.domain,
         'project_packages': script_arguments.__getattribute__('with') or [],
     }
-
-
-ConfigurationType = Union[str, int, List]
-ConfigurationAccessorType = Callable[[str], ConfigurationType]
 
 
 def create_configuration_accessor(project_name: str, project_domain: str,

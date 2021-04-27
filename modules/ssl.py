@@ -31,7 +31,7 @@ class Generator:
                         '--mount', f'type=bind,source={getcwd()},target=/usr/src/myapp',
                         '--workdir', '/usr/src/myapp',
                         'golang:1.14',
-                        'go', 'build', '-v'
+                        'go', 'build'
                     ),
                     check=True
                 )

@@ -1,7 +1,7 @@
 from fileinput import input
 from os import getuid, getgid, getcwd
 from pathlib import Path
-from re import compile
+from re import compile, Match, Pattern
 from shutil import copyfile
 from string import Template
 from subprocess import run
@@ -17,12 +17,11 @@ from modules.verification import correct_version_is_installed
 
 def preflight_checks() -> None:
     """
-    Checks whether the correct version of the dependencies of the script are installed.
+    Checks whether the correct version of the dependencies are installed.
     """
     requirements: Mapping[str, str] = {
         'docker.version': '20.10.5',
         'docker-compose.version': '1.28.0',
-        'openssl.version': '1.1.1',
         'git.version': '2.31.0',
     }
 
@@ -38,13 +37,6 @@ def preflight_checks() -> None:
         raise RuntimeError(
             'The correct docker-compose version is not installed. '
             f"Docker-Compose >= v{requirements['docker-compose.version']} is needed."
-        )
-
-    if not correct_version_is_installed(
-            ('openssl', 'version'), requirements['openssl.version']):
-        raise RuntimeError(
-            'The correct openssl version is not installed. '
-            f"OpenSSL >= v{requirements['openssl.version']} is needed."
         )
 
     if not correct_version_is_installed(
@@ -68,16 +60,16 @@ def configure() -> ConfigurationAccessorType:
 def generate_configuration_files(configuration: ConfigurationAccessorType) -> None:
     with cd(configuration('project.name')):
         with cd('configuration/nginx/ssl'):
-            generator: SslGenerator = SslGenerator(
+            ssl_generator: SslGenerator = SslGenerator(
                 domain=configuration('project.domain'),
                 certificate_name=configuration('services.nginx.ssl.certificate.name'),
                 key_name=configuration('services.nginx.ssl.key.name')
             )
 
-            if not generator.binary_is_present():
-                generator.build_binary()
+            if not ssl_generator.binary_is_present():
+                ssl_generator.build_binary()
 
-            generator.generate()
+            ssl_generator.generate()
 
         with open('docker-compose.yml', 'w') as file, open(f"{template_path('docker-compose.yml')}") as template:
             file.write(
@@ -169,7 +161,7 @@ def pull_fresh_laravel_project(configuration: ConfigurationAccessorType) -> None
         )
 
 
-def initial_git_commit(configuration: ConfigurationAccessorType) -> None:
+def initialize_git_repository(configuration: ConfigurationAccessorType) -> None:
     with cd(f"{configuration('project.name')}/application/core/{configuration('project.name')}"):
         run(('git', 'init'), check=True)
         run(('git', 'add', '*'), check=True)
@@ -205,14 +197,14 @@ def configure_environment_variables(configuration: ConfigurationAccessorType) ->
     with cd(f"{configuration('project.name')}/application/core/{configuration('project.name')}"):
         for environment_file in ['.env', '.env.example']:
             with input(environment_file, inplace=True) as file:
-                environment_regex = compile(r'^(?P<key>\w+)=(?P<value>.*?)?\s*$')
+                environment_regex: Pattern = compile(r'^(?P<key>\w+)=(?P<value>.*?)?\s*$')
 
                 for line in file:
-                    line = line.strip()
-                    matches = environment_regex.match(line)
+                    line: str = line.strip()
+                    matches: Match = environment_regex.match(line)
 
                     if matches is not None:
-                        matches = matches.groupdict()
+                        matches: Mapping[str, str] = matches.groupdict()
                         line = (f"{matches['key']}="
                                 f"{environment[matches['key']] if matches['key'] in environment else matches['value']}")
 
