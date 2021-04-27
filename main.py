@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
 from modules.configuration import ConfigurationAccessorType
-from modules.extracts import configure, countdown, ignition, main_engine_start, orbital_checkout, preflight_checks, \
-    takeoff, to_infinity
+from modules.extracts import configure, pull_fresh_laravel_project, generate_configuration_files, \
+    configure_environment_variables, preflight_checks, initial_git_commit, setup_laravel_packages
+from modules.generators import setup_directory_structure
 
 if __name__ == '__main__':
     print('Doing some preflight checks...')
@@ -12,22 +13,22 @@ if __name__ == '__main__':
     configuration: ConfigurationAccessorType = configure()
 
     print('Setting up the directory structure of the project...')
-    ignition(configuration)
+    setup_directory_structure(configuration('project.name'))
 
     print('Generating the configuration files for the project...')
-    main_engine_start(configuration)
+    generate_configuration_files(configuration)
 
     print('Pulling a fresh laravel project...')
-    countdown(configuration)
+    pull_fresh_laravel_project(configuration)
 
     print('Initializing git for the laravel project...')
-    takeoff(configuration)
+    initial_git_commit(configuration)
 
     print('Rewriting environment variables for the laravel project...')
-    orbital_checkout(configuration)
+    configure_environment_variables(configuration)
 
     if configuration('project.packages'):
         print('Setting up additional packages...')
-        to_infinity(configuration)
+        setup_laravel_packages(configuration)
 
     print("Project successfully set-up. See the project's README.md for more information.")

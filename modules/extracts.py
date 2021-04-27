@@ -65,11 +65,7 @@ def configure() -> ConfigurationAccessorType:
     )
 
 
-def ignition(configuration: ConfigurationAccessorType) -> None:
-    setup_directory_structure(configuration('project.name'))
-
-
-def main_engine_start(configuration: ConfigurationAccessorType) -> None:
+def generate_configuration_files(configuration: ConfigurationAccessorType) -> None:
     with cd(configuration('project.name')):
         with cd('configuration/nginx/ssl'):
             generate_self_signed_tls_certificate(
@@ -148,7 +144,7 @@ def main_engine_start(configuration: ConfigurationAccessorType) -> None:
             copyfile(template_path('docker-compose/services/php/Dockerfile'), f'{Path.cwd()}/Dockerfile')
 
 
-def countdown(configuration: ConfigurationAccessorType) -> None:
+def pull_fresh_laravel_project(configuration: ConfigurationAccessorType) -> None:
     with cd(f"{configuration('project.name')}/application/core"):
         run(
             (
@@ -169,7 +165,7 @@ def countdown(configuration: ConfigurationAccessorType) -> None:
         )
 
 
-def takeoff(configuration: ConfigurationAccessorType) -> None:
+def initial_git_commit(configuration: ConfigurationAccessorType) -> None:
     with cd(f"{configuration('project.name')}/application/core/{configuration('project.name')}"):
         run(('git', 'init'), check=True)
         run(('git', 'add', '*'), check=True)
@@ -177,7 +173,7 @@ def takeoff(configuration: ConfigurationAccessorType) -> None:
         run(('git', 'checkout', '-b', 'development'), check=True)
 
 
-def orbital_checkout(configuration: ConfigurationAccessorType) -> None:
+def configure_environment_variables(configuration: ConfigurationAccessorType) -> None:
     environment: Mapping[str, Union[str, int]] = {
         'APP_NAME': configuration('project.name'),
         'APP_URL': f"https://{configuration('project.domain')}",
@@ -226,7 +222,7 @@ def orbital_checkout(configuration: ConfigurationAccessorType) -> None:
             migrate_database()
 
 
-def to_infinity(configuration: ConfigurationAccessorType) -> None:
+def setup_laravel_packages(configuration: ConfigurationAccessorType) -> None:
     if 'breeze.inertia' in configuration('project.packages'):
         setup_breeze_with_inertia(configuration)
 
