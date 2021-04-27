@@ -33,13 +33,15 @@ To install the **Laravel Setup** project, you only need to clone the project.
 $ git clone https://github.com/merchant-prince/laravel-setup.git
 ```
 
+@TODO: ADD SECTION ABOUT MINICA INITIAL CERT GEN
+
 
 ## Usage
 
-To use the script, you need to call the main.py script with the appropriate arguments.
+To use the script, you need to call the laravel-setup script with the appropriate arguments.
 
 ```shell
-$ ./main.py setup ProjectName [--domain DOMAIN] [--with [{horizon,telescope}]
+$ ./bin/laravel-setup setup ProjectName [--domain DOMAIN] [--with [{horizon,telescope}]
 ```
 
 
@@ -48,7 +50,7 @@ $ ./main.py setup ProjectName [--domain DOMAIN] [--with [{horizon,telescope}]
 A bare-bones Laravel project can be set-up using the following command:
 
 ```shell script
-$ ./main.py setup LeProject
+$ ./bin/laravel-setup setup LeProject
 ```
 
 The above command will generate a project in the current working directory hosted at
@@ -61,7 +63,7 @@ If you would like to host your project at a domain other than [https://applicati
 you can pass the ```--domain``` flag with the domain where you would like the project to be hosted.
 
 ```shell script
-$ ./main.py setup MyApplication --domain example.local
+$ ./bin/laravel-setup setup MyApplication --domain example.local
 ```
 
 
@@ -81,13 +83,14 @@ If you would like to install any (or all) of the following packages, you can spe
 
 The packages that can be installed are:
 
+* [Breeze](https://laravel.com/docs/8.x/starter-kits#laravel-breeze)
 * [Horizon](https://laravel.com/docs/8.x/horizon)
 * [Telescope](https://laravel.com/docs/8.x/telescope)
 
 This can be done as follows:
 
 ```shell script
-$ ./main.py setup MyProject --with horizon telescope
+$ ./bin/laravel-setup setup MyProject --with breeze|breeze.inertia horizon telescope
 ```
 
 
