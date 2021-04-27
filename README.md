@@ -33,8 +33,6 @@ To install the **Laravel Setup** project, you only need to clone the project.
 $ git clone https://github.com/merchant-prince/laravel-setup.git
 ```
 
-@TODO: ADD SECTION ABOUT MINICA INITIAL CERT GEN
-
 
 ## Usage
 
@@ -92,6 +90,16 @@ This can be done as follows:
 ```shell script
 $ ./bin/laravel-setup setup MyProject --with breeze|breeze.inertia horizon telescope
 ```
+
+
+## SSL
+The SSL certificates  are generated using [minica](https://github.com/jsha/minica).
+After generating the first Laravel project using this script, a new **root CA certificate pair** will be generated at
+```./tools/ssl```. You need to import the certificate (```minica.pem```) into your browsers' *Certificate Authorities*
+section.
+
+If you ever delete the generated certificate pair, the next time you generate a new project, you will need to re-import
+the **root CA certificate** into your browser again.
 
 
 ## Further Information
